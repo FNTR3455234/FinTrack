@@ -147,6 +147,63 @@ justificarlas después. Formato por entrada: **decisión, contexto, alternativas
 
 ---
 
+## 011 — Dos secretos distintos para acceso y refresco
+
+**Fecha:** 2026-07-31 · **Fase:** 3
+
+- **Contexto:** hay dos tipos de token con vidas muy distintas (15 minutos y 7 días).
+- **Alternativas:** un solo secreto, distinguiendo los tipos por un campo dentro del token.
+- **Decisión:** un secreto por tipo, y además un campo `tipo` que se verifica.
+- **Por qué:** con secretos separados, mandar el token de refresco en el encabezado
+  `Authorization` simplemente no valida, aunque alguien se equivoque al programar la validación.
+  El campo `tipo` es la segunda barrera y deja el propósito escrito dentro del propio token.
+  La configuración además exige que los dos secretos sean distintos.
+
+---
+
+## 012 — El mismo error para "no existe el correo" y "contraseña incorrecta"
+
+**Fecha:** 2026-07-31 · **Fase:** 3
+
+- **Contexto:** el login puede fallar por dos razones distintas.
+- **Decisión:** los dos casos devuelven exactamente el mismo `401 CREDENCIALES_INVALIDAS`, con el
+  mismo mensaje. Y cuando el correo no existe, igual se ejecuta una comparación bcrypt contra un
+  hash de relleno.
+- **Por qué:** si los errores fueran distintos, cualquiera podría averiguar qué correos tienen
+  cuenta probando el login. La comparación de relleno evita que la diferencia de tiempo de
+  respuesta (bcrypt tarda ~60 ms) delate lo mismo que el mensaje ya no delata.
+
+---
+
+## 013 — No se comprueba si el correo existe antes de insertar
+
+**Fecha:** 2026-07-31 · **Fase:** 3
+
+- **Contexto:** el registro tiene que rechazar correos repetidos.
+- **Alternativas:** consultar primero si existe y después insertar.
+- **Decisión:** insertar directo y traducir el error de llave duplicada del índice único.
+- **Por qué:** comprobar y luego insertar deja una ventana en la que dos registros simultáneos
+  con el mismo correo pasan los dos la comprobación. El índice único no tiene esa ventana. El
+  repositorio traduce el error del driver a `ErrDuplicado` y el servicio lo convierte en
+  `409 EMAIL_YA_REGISTRADO`.
+
+---
+
+## 014 — Límite de peticiones en memoria, solo en `/auth`
+
+**Fecha:** 2026-07-31 · **Fase:** 3
+
+- **Contexto:** hay que frenar los intentos de fuerza bruta contra el login.
+- **Alternativas:** un limitador distribuido con Redis; limitar toda la API.
+- **Decisión:** contador de ventana fija en memoria, 20 peticiones por minuto y por IP, aplicado
+  solo al grupo `/auth`.
+- **Por qué:** es el algoritmo más simple que resuelve el problema real y son 60 líneas que se
+  explican completas. Al ser en memoria, el límite es por instancia; con varias réplicas habría
+  que mover el contador a Redis, pero eso no aplica al alcance de este proyecto. Limitar el resto
+  de la API estorbaría al uso normal (el dashboard hace varias peticiones a la vez).
+
+---
+
 ## Pendientes anotados (se resuelven en su fase)
 
 - **Fase 3 — Refresh token sin estado:** el refresh token no se guarda en la base, así que se puede

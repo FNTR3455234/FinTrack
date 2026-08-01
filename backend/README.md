@@ -95,9 +95,9 @@ handlers  ->  servicios  ->  repositorios  ->  MongoDB
 | `internal/middleware` | Id de petición, bitácora, recuperación de panics, CORS |
 | `internal/handlers` | Traducción entre HTTP y los servicios |
 | `internal/rutas` | Registro de endpoints y middlewares |
-| `internal/modelos` | Structs y DTOs *(fase 3)* |
-| `internal/repositorios` | Único código que consulta MongoDB *(fase 3)* |
-| `internal/servicios` | Reglas de negocio *(fase 3)* |
+| `internal/modelos` | Documentos de MongoDB y DTOs de entrada/salida |
+| `internal/repositorios` | Único código que consulta MongoDB |
+| `internal/servicios` | Reglas de negocio y emisión de tokens |
 
 Ningún archivo Go pasa de ~200 líneas: se prefieren varios archivos chicos.
 
@@ -127,11 +127,20 @@ texto del mensaje. El catálogo completo está en
 
 ## Endpoints
 
+🔒 = requiere `Authorization: Bearer <token de acceso>`.
+
 | Método | Ruta | Descripción |
 |---|---|---|
 | GET | `/api/v1/health` | Estado del servicio, ping a MongoDB y versión |
+| POST | `/api/v1/auth/registro` | Alta de usuario. Devuelve la sesión iniciada |
+| POST | `/api/v1/auth/login` | Inicio de sesión |
+| POST | `/api/v1/auth/refresh` | Renueva el token de acceso |
+| 🔒 GET | `/api/v1/auth/perfil` | Datos del usuario del token |
+| 🔒 PUT | `/api/v1/auth/perfil` | Edita nombre y moneda |
 
-El resto de los endpoints llega en las fases 3 a 6.
+El resto de los endpoints llega en las fases 4 a 6.
+
+### `GET /health`
 
 ```bash
 curl http://localhost:8080/api/v1/health
@@ -143,6 +152,112 @@ curl http://localhost:8080/api/v1/health
 
 Responde `200` si MongoDB contesta y `503` con `"estado":"degradado"` si no, para que un
 orquestador pueda dejar de mandarle tráfico.
+
+### `POST /auth/registro`
+
+```bash
+curl -X POST http://localhost:8080/api/v1/auth/registro \
+  -H "Content-Type: application/json" \
+  -d '{"nombre":"Ana Lopez","email":"ana@fintrack.mx","password":"Clave12345!"}'
+```
+
+```json
+{"datos":{
+  "token_acceso":"eyJhbGciOi...",
+  "token_refresco":"eyJhbGciOi...",
+  "expira_en":900,
+  "usuario":{"id":"...","nombre":"Ana Lopez","email":"ana@fintrack.mx","moneda":"MXN","activo":true}
+}}
+```
+
+| Campo | Reglas |
+|---|---|
+| `nombre` | obligatorio, 2 a 80 caracteres |
+| `email` | obligatorio, formato de correo, máx. 120 |
+| `password` | obligatorio, 8 a **72** caracteres |
+| `moneda` | opcional, 3 letras (por defecto `MXN`) |
+
+El máximo de 72 no es arbitrario: bcrypt solo toma los primeros 72 bytes, así que aceptar más
+daría una falsa sensación de seguridad.
+
+Errores: `400 DATOS_INVALIDOS` (con la lista de campos), `400 JSON_INVALIDO`,
+`409 EMAIL_YA_REGISTRADO`.
+
+### `POST /auth/login`
+
+```bash
+curl -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"demo@fintrack.mx","password":"Demo1234!"}'
+```
+
+Devuelve lo mismo que el registro. Si el correo no existe **o** la contraseña es incorrecta,
+responde exactamente el mismo `401 CREDENCIALES_INVALIDAS`: distinguirlos permitiría averiguar
+qué correos tienen cuenta. Por la misma razón, cuando el correo no existe igual se ejecuta una
+comparación bcrypt contra un hash de relleno, para que el tiempo de respuesta no lo delate.
+
+### `POST /auth/refresh`
+
+```bash
+curl -X POST http://localhost:8080/api/v1/auth/refresh \
+  -H "Content-Type: application/json" \
+  -d '{"token_refresco":"eyJhbGciOi..."}'
+```
+
+```json
+{"datos":{"token_acceso":"eyJhbGciOi...","expira_en":900}}
+```
+
+Vuelve a leer el usuario de la base antes de emitir el token: el de refresco dura 7 días y la
+cuenta pudo borrarse o desactivarse en ese tiempo.
+
+Errores: `401 TOKEN_VENCIDO`, `401 TOKEN_INVALIDO`, `403 CUENTA_DESACTIVADA`.
+
+### `GET` y `PUT /auth/perfil`
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/v1/auth/perfil
+
+curl -X PUT -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"nombre":"Ana Lopez","moneda":"USD"}' \
+  http://localhost:8080/api/v1/auth/perfil
+```
+
+El correo **no** se puede cambiar: es la credencial de acceso y la llave única.
+
+## Autenticación
+
+Dos tokens, firmados con **secretos distintos**:
+
+| Token | Vida | Para qué |
+|---|---|---|
+| Acceso | 15 min (`JWT_MINUTOS_ACCESO`) | Acompaña cada petición en `Authorization: Bearer` |
+| Refresco | 7 días (`JWT_DIAS_REFRESCO`) | Solo sirve para pedir un token de acceso nuevo |
+
+Usar secretos distintos hace que un token de refresco no pueda pasar por uno de acceso ni al
+revés, aunque alguien lo mande en el encabezado equivocado. Además, cada token lleva dentro un
+campo `tipo` que se verifica, y la validación exige el algoritmo HMAC (así un token con
+`alg: none` se rechaza) y el emisor `fintrack`.
+
+El middleware de autenticación mete el `usuario_id` del token en el contexto de Gin. **Los
+handlers lo toman siempre de ahí y nunca del cuerpo ni de la query**: si el id viniera del
+cliente, cualquiera podría pedir los datos de otro cambiando un valor. Esta es la regla que
+sostiene todo el aislamiento entre usuarios.
+
+El middleware distingue `TOKEN_VENCIDO` de `TOKEN_INVALIDO` para que el frontend sepa cuándo
+vale la pena intentar el refresco y cuándo mandar directo al login.
+
+### Contraseñas
+
+Se guardan con **bcrypt** (coste 10, el de por defecto). El campo lleva `json:"-"`, así que el
+hash nunca sale en una respuesta aunque se devuelva el usuario completo.
+
+### Límite de peticiones
+
+El grupo `/auth` está limitado a **20 peticiones por minuto y por IP** (contador de ventana fija
+en memoria). Al pasarse responde `429 DEMASIADOS_INTENTOS` con el encabezado `Retry-After`.
+Es la protección contra alguien probando contraseñas a fuerza bruta. El resto de la API no está
+limitada.
 
 ## Middlewares propios
 
@@ -202,6 +317,8 @@ MONGO_URI_PRUEBAS="mongodb://fintrack_admin:fintrack_dev_2026@localhost:27017/?a
 Usan una base aparte (`fintrack_pruebas_db`) que se borra al terminar, así que nunca tocan los
 datos de desarrollo.
 
+Las de `internal/repositorios` también son de integración y siguen la misma regla.
+
 Cobertura actual:
 
 | Paquete | Cobertura |
@@ -209,7 +326,13 @@ Cobertura actual:
 | `internal/config` | 93.5 % |
 | `internal/db` | 90.0 % (con MongoDB) |
 | `internal/errores` | 100 % |
-| `internal/handlers` | 100 % |
-| `internal/middleware` | 98.1 % |
+| `internal/handlers` | 81.3 % |
+| `internal/middleware` | 99.0 % |
+| `internal/repositorios` | 88.9 % (con MongoDB) |
 | `internal/respuestas` | 100 % |
 | `internal/rutas` | 100 % |
+| `internal/servicios` | 87.5 % |
+
+Las pruebas de `internal/rutas` recorren la pila completa (router, middlewares, handlers,
+servicio y tokens reales) con un repositorio en memoria, e incluyen la comprobación de que
+**dos usuarios distintos nunca ven los datos del otro**.

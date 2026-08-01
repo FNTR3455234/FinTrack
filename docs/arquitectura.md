@@ -29,10 +29,20 @@ _(Pendiente: detallar el contrato de cada capa con ejemplos reales de código.)_
 ## Aislamiento por usuario
 
 Regla innegociable: ninguna consulta llega a MongoDB sin filtrar por `usuario_id`, y ese
-`usuario_id` sale siempre del token JWT (inyectado en el contexto de Gin por el middleware de
-autenticación), nunca del cuerpo de la petición.
+`usuario_id` sale siempre del token JWT, nunca del cuerpo de la petición.
 
-_(Pendiente: describir cómo el middleware inyecta el id y cómo lo consume cada repositorio.)_
+El recorrido completo:
+
+1. `middleware.Autenticacion` lee el encabezado `Authorization: Bearer <token>`, valida la firma
+   y la vigencia, y saca el id del usuario del campo `sub` del token.
+2. Lo guarda en el contexto de Gin con la llave `usuario_id`.
+3. Los handlers lo leen con `middleware.UsuarioID(c)` y se lo pasan al servicio como argumento.
+4. El repositorio lo mete en el filtro de **toda** consulta a MongoDB.
+
+Si el id viniera del cuerpo o de la query, cualquiera podría pedir los datos de otro cambiando un
+valor. Por eso los DTO de entrada **no tienen** un campo `usuario_id`: no hay forma de mandarlo.
+
+_(Pendiente en la fase 4: mostrarlo con el filtro de un repositorio real.)_
 
 ## Modelo de datos
 
@@ -40,8 +50,11 @@ Ver [`database/modelo.md`](../database/modelo.md) para el diagrama de coleccione
 
 ## Autenticación
 
-_(Pendiente: flujo de access token de 15 min + refresh token de 7 días, y el reintento del
-interceptor de axios ante un 401.)_
+Dos tokens firmados con secretos distintos: el de **acceso** (15 min) acompaña cada petición y el
+de **refresco** (7 días) solo sirve para pedir uno de acceso nuevo. El detalle está en
+[`../backend/README.md`](../backend/README.md#autenticación).
+
+_(Pendiente en la fase 7: el reintento del interceptor de axios ante un 401.)_
 
 ## Decisiones
 

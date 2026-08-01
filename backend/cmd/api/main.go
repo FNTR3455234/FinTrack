@@ -16,7 +16,9 @@ import (
 
 	"github.com/FNTR3455234/FinTrack/backend/internal/config"
 	"github.com/FNTR3455234/FinTrack/backend/internal/db"
+	"github.com/FNTR3455234/FinTrack/backend/internal/repositorios"
 	"github.com/FNTR3455234/FinTrack/backend/internal/rutas"
+	"github.com/FNTR3455234/FinTrack/backend/internal/servicios"
 )
 
 // tiempoApagado es lo que se espera a que terminen las peticiones en curso
@@ -51,9 +53,20 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Cableado de las capas: repositorio -> servicio -> handlers.
+	tokens := servicios.NuevoTokens(
+		cfg.JWTSecretoAcceso, cfg.JWTSecretoRefresco,
+		cfg.JWTMinutosAcceso, cfg.JWTDiasRefresco,
+	)
+	servicioAuth := servicios.NuevoAuth(repositorios.NuevoUsuarios(conexion.BD), tokens)
+
 	servidor := &http.Server{
-		Addr:    cfg.Direccion(),
-		Handler: rutas.Configurar(cfg, rutas.Dependencias{BD: conexion}),
+		Addr: cfg.Direccion(),
+		Handler: rutas.Configurar(cfg, rutas.Dependencias{
+			BD:        conexion,
+			Auth:      servicioAuth,
+			Validador: tokens,
+		}),
 		// Sin estos limites una conexion lenta puede quedarse tomada de forma
 		// indefinida.
 		ReadTimeout:       15 * time.Second,

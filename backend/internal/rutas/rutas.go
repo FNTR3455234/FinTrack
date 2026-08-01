@@ -4,6 +4,7 @@ package rutas
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -14,16 +15,29 @@ import (
 	"github.com/FNTR3455234/FinTrack/backend/internal/respuestas"
 )
 
+// Limite de peticiones del grupo /auth: 20 por minuto y por IP.
+//
+// Es suficiente para alguien que se equivoca de contraseña varias veces o para
+// el refresco automatico del frontend, y corta de inmediato un intento de
+// probar contraseñas a fuerza bruta.
+const (
+	maximoPeticionesAuth = 20
+	ventanaAuth          = time.Minute
+)
+
 // Dependencias son las piezas que los handlers necesitan. Se pasan explicitas
 // en vez de usar variables globales, para poder armar el router con dobles de
 // prueba en los tests.
 type Dependencias struct {
-	BD handlers.VerificadorBD
+	BD        handlers.VerificadorBD
+	Auth      handlers.ServicioAuth
+	Validador middleware.ValidadorToken
 }
 
 // Configurar devuelve el router listo para servir.
 func Configurar(cfg *config.Config, deps Dependencias) *gin.Engine {
 	gin.SetMode(cfg.GinModo)
+	handlers.ConfigurarValidador()
 
 	// gin.New() y no gin.Default(): Default trae su propio logger y su propio
 	// recovery, y aqui se usan los propios.
@@ -41,8 +55,38 @@ func Configurar(cfg *config.Config, deps Dependencias) *gin.Engine {
 	router.Use(middleware.Recuperacion())
 	router.Use(middleware.CORS(cfg.CORSOrigenes))
 
-	// Una ruta inexistente tambien responde con el formato uniforme, no con el
-	// texto plano "404 page not found" de Gin.
+	registrarErroresDeRuta(router)
+
+	v1 := router.Group("/api/v1")
+	{
+		v1.GET("/health", handlers.Salud(deps.BD, config.Version))
+
+		auth := handlers.NuevoAuth(deps.Auth)
+		// Publicas, pero con limite de peticiones por IP.
+		publicas := v1.Group("/auth", middleware.LimitePeticiones(maximoPeticionesAuth, ventanaAuth))
+		{
+			publicas.POST("/registro", auth.Registro)
+			publicas.POST("/login", auth.Login)
+			publicas.POST("/refresh", auth.Refrescar)
+		}
+
+		// A partir de aqui hace falta un token de acceso valido.
+		privadas := v1.Group("", middleware.Autenticacion(deps.Validador))
+		{
+			privadas.GET("/auth/perfil", auth.Perfil)
+			privadas.PUT("/auth/perfil", auth.ActualizarPerfil)
+
+			// Fase 4: /cuentas, /categorias, /transacciones
+			// Fase 5: /presupuestos, /reportes
+		}
+	}
+
+	return router
+}
+
+// registrarErroresDeRuta hace que un 404 o un 405 respondan con el mismo
+// formato JSON que el resto de la API, y no con el texto plano de Gin.
+func registrarErroresDeRuta(router *gin.Engine) {
 	router.NoRoute(func(c *gin.Context) {
 		respuestas.Fallo(c, errores.NoEncontrado(
 			errores.CodigoRutaNoEncontrada,
@@ -56,15 +100,4 @@ func Configurar(cfg *config.Config, deps Dependencias) *gin.Engine {
 			HTTP:    http.StatusMethodNotAllowed,
 		})
 	})
-
-	v1 := router.Group("/api/v1")
-	{
-		v1.GET("/health", handlers.Salud(deps.BD, config.Version))
-
-		// Fase 3: /auth/registro, /auth/login, /auth/refresh, /auth/perfil
-		// Fase 4: /cuentas, /categorias, /transacciones
-		// Fase 5: /presupuestos, /reportes
-	}
-
-	return router
 }

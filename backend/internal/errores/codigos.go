@@ -22,6 +22,7 @@ const (
 	CodigoCredencialesInvalidas = "CREDENCIALES_INVALIDAS"
 	CodigoEmailYaRegistrado     = "EMAIL_YA_REGISTRADO"
 	CodigoUsuarioNoEncontrado   = "USUARIO_NO_ENCONTRADO"
+	CodigoCuentaDesactivada     = "CUENTA_DESACTIVADA"
 	CodigoDemasiadosIntentos    = "DEMASIADOS_INTENTOS"
 
 	// Recursos (fases 4 y 5)
