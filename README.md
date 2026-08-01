@@ -3,7 +3,7 @@
 Aplicación web de finanzas personales y presupuestos: registra tus ingresos y gastos, organízalos
 por cuentas y categorías, ponles un límite mensual y mira a dónde se te va el dinero.
 
-> **Estado:** en desarrollo. Fases 0 a 3 de 10 completadas — ver la [tabla de avance](#avance-por-fases).
+> **Estado:** en desarrollo. Fases 0 a 4 de 10 completadas — ver la [tabla de avance](#avance-por-fases).
 
 ## Stack
 
@@ -52,6 +52,7 @@ Los mismos targets existen en `Makefile` (Linux/macOS/CI) y en `make.ps1` (Windo
 | `make dev` | Levanta Mongo y arranca la API | fase 2 |
 | `make lint` | `go vet` + `golangci-lint` | fase 2 |
 | `make test` | Pruebas de Go con cobertura | fase 3 |
+| `make test-integracion` | Todas las pruebas, incluidas las que usan MongoDB | fase 4 |
 | `make build` | Compila backend y frontend | fase 7 |
 
 `make help` (o `.\make.ps1`) lista todo.
@@ -81,7 +82,7 @@ Los mismos targets existen en `Makefile` (Linux/macOS/CI) y en `make.ps1` (Windo
 | 1 | Base de datos: modelo, `$jsonSchema`, índices, semilla, respaldo | ✅ |
 | 2 | Backend base: config, conexión, `/health`, errores, middlewares, apagado ordenado | ✅ |
 | 3 | Autenticación: registro, login, refresh, perfil, rate limit | ✅ |
-| 4 | CRUD de cuentas, categorías y transacciones con filtros y paginación | ⏳ |
+| 4 | CRUD de cuentas, categorías y transacciones con filtros y paginación | ✅ |
 | 5 | Presupuestos, consultas relacionales, resumen, tendencia y alertas | ⏳ |
 | 6 | Exportar/importar CSV, Swagger, colección de Postman | ⏳ |
 | 7 | Frontend completo | ⏳ |

@@ -29,9 +29,12 @@ const (
 // en vez de usar variables globales, para poder armar el router con dobles de
 // prueba en los tests.
 type Dependencias struct {
-	BD        handlers.VerificadorBD
-	Auth      handlers.ServicioAuth
-	Validador middleware.ValidadorToken
+	BD            handlers.VerificadorBD
+	Auth          handlers.ServicioAuth
+	Validador     middleware.ValidadorToken
+	Cuentas       handlers.ServicioCuentas
+	Categorias    handlers.ServicioCategorias
+	Transacciones handlers.ServicioTransacciones
 }
 
 // Configurar devuelve el router listo para servir.
@@ -76,12 +79,48 @@ func Configurar(cfg *config.Config, deps Dependencias) *gin.Engine {
 			privadas.GET("/auth/perfil", auth.Perfil)
 			privadas.PUT("/auth/perfil", auth.ActualizarPerfil)
 
-			// Fase 4: /cuentas, /categorias, /transacciones
+			registrarCRUD(privadas, "/cuentas", crudDe(handlers.NuevoCuentas(deps.Cuentas)))
+			registrarCRUD(privadas, "/categorias", crudDe(handlers.NuevoCategorias(deps.Categorias)))
+			registrarCRUD(privadas, "/transacciones", crudDe(handlers.NuevoTransacciones(deps.Transacciones)))
+
 			// Fase 5: /presupuestos, /reportes
 		}
 	}
 
 	return router
+}
+
+// crud son los cinco handlers que comparten los tres recursos con CRUD.
+type crud struct {
+	listar     gin.HandlerFunc
+	obtener    gin.HandlerFunc
+	crear      gin.HandlerFunc
+	actualizar gin.HandlerFunc
+	eliminar   gin.HandlerFunc
+}
+
+// recursoCRUD es lo que cumplen los tres grupos de handlers de la fase 4.
+type recursoCRUD interface {
+	Listar(*gin.Context)
+	Obtener(*gin.Context)
+	Crear(*gin.Context)
+	Actualizar(*gin.Context)
+	Eliminar(*gin.Context)
+}
+
+func crudDe(r recursoCRUD) crud {
+	return crud{listar: r.Listar, obtener: r.Obtener, crear: r.Crear, actualizar: r.Actualizar, eliminar: r.Eliminar}
+}
+
+// registrarCRUD engancha las cinco rutas de siempre sobre una ruta base.
+// Cuentas, categorias y transacciones tienen exactamente la misma forma, asi
+// que registrarlas a mano tres veces solo invita a que se desalineen.
+func registrarCRUD(grupo *gin.RouterGroup, base string, h crud) {
+	grupo.GET(base, h.listar)
+	grupo.POST(base, h.crear)
+	grupo.GET(base+"/:id", h.obtener)
+	grupo.PUT(base+"/:id", h.actualizar)
+	grupo.DELETE(base+"/:id", h.eliminar)
 }
 
 // registrarErroresDeRuta hace que un 404 o un 405 respondan con el mismo

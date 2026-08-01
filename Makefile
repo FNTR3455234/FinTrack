@@ -7,17 +7,19 @@
 # empiezan a funcionar en cuanto aterriza su fase. Ver el README para el estado.
 
 COMPOSE_DEV = docker compose -f docker-compose.dev.yml
+MONGO_URI_DEV = mongodb://fintrack_admin:fintrack_dev_2026@localhost:27017/?authSource=admin
 MONGOSH = mongosh -u fintrack_admin -p fintrack_dev_2026 --authenticationDatabase admin --quiet
 
 .DEFAULT_GOAL := help
-.PHONY: help up down dev test lint seed build
+.PHONY: help up down dev test test-integracion lint seed build
 
 help: ## Muestra esta ayuda
 	@echo "FinTrack - atajos disponibles:"
 	@echo "  make up      Levanta MongoDB (compose de desarrollo)"
 	@echo "  make down    Detiene MongoDB"
 	@echo "  make dev     Levanta Mongo y arranca la API en modo desarrollo   [fase 2]"
-	@echo "  make test    Corre las pruebas de Go con cobertura               [fase 3]"
+	@echo "  make test    Corre las pruebas de Go con cobertura"
+	@echo "  make test-integracion  Todas las pruebas, incluidas las de MongoDB"
 	@echo "  make lint    Corre go vet y golangci-lint                        [fase 2]"
 	@echo "  make seed    Recrea el esquema y carga los datos semilla"
 	@echo "  make build   Compila el backend y el frontend                    [fase 7]"
@@ -32,8 +34,13 @@ down: ## Detiene MongoDB (conserva los datos del volumen)
 dev: up ## Levanta Mongo y arranca la API con recarga manual
 	cd backend && go run ./cmd/api
 
-test: ## Pruebas del backend con reporte de cobertura
-	cd backend && go test ./... -cover -coverprofile=coverage.out
+test: ## Pruebas del backend (las de integracion se saltan solas)
+	cd backend && go test ./... -coverpkg=./... -coverprofile=coverage.out
+	@cd backend && go tool cover -func=coverage.out | tail -1
+
+test-integracion: up ## Todas las pruebas, incluidas las que necesitan MongoDB
+	cd backend && MONGO_URI_PRUEBAS="$(MONGO_URI_DEV)" go test ./... -coverpkg=./... -coverprofile=coverage.out
+	@cd backend && go tool cover -func=coverage.out | tail -1
 
 lint: ## Analisis estatico del backend
 	cd backend && go vet ./...

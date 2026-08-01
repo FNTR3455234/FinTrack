@@ -7,13 +7,13 @@ package errores
 // Swagger cuales puede devolver.
 const (
 	// Generales
-	CodigoErrorInterno     = "ERROR_INTERNO"
-	CodigoDatosInvalidos   = "DATOS_INVALIDOS"
-	CodigoJSONInvalido     = "JSON_INVALIDO"
-	CodigoIDInvalido       = "ID_INVALIDO"
+	CodigoErrorInterno      = "ERROR_INTERNO"
+	CodigoDatosInvalidos    = "DATOS_INVALIDOS"
+	CodigoJSONInvalido      = "JSON_INVALIDO"
+	CodigoIDInvalido        = "ID_INVALIDO"
 	CodigoRutaNoEncontrada  = "RUTA_NO_ENCONTRADA"
 	CodigoMetodoNoPermitido = "METODO_NO_PERMITIDO"
-	CodigoBDNoDisponible   = "BD_NO_DISPONIBLE"
+	CodigoBDNoDisponible    = "BD_NO_DISPONIBLE"
 
 	// Autenticacion (fase 3)
 	CodigoNoAutenticado         = "NO_AUTENTICADO"

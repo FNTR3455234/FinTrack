@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"strings"
-	"time"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"golang.org/x/crypto/bcrypt"
@@ -60,7 +59,7 @@ func (a *Auth) Registrar(ctx context.Context, peticion modelos.PeticionRegistro)
 		Email:         normalizarEmail(peticion.Email),
 		Password:      string(hash),
 		Moneda:        moneda,
-		FechaRegistro: time.Now().UTC(),
+		FechaRegistro: ahora(),
 		Activo:        true,
 	}
 

@@ -204,6 +204,61 @@ justificarlas después. Formato por entrada: **decisión, contexto, alternativas
 
 ---
 
+## 015 — Borrar cuentas y categorías: 409 en vez de borrado en cascada
+
+**Fecha:** 2026-08-01 · **Fase:** 4
+
+- **Contexto:** una cuenta o categoría puede tener transacciones que la referencian.
+- **Alternativas:** borrado en cascada; dejar los movimientos huérfanos; borrado lógico siempre.
+- **Decisión:** `DELETE` borra solo si no hay movimientos; si los hay responde `409` y el cliente
+  debe archivar (`archivada: true`).
+- **Por qué:** el borrado en cascada puede tirar meses de historial por un clic y no tiene vuelta
+  atrás. El campo `archivada` ya existía en el modelo justo para este caso. El conteo previo
+  también filtra por `usuario_id`, así que los movimientos de otro usuario no pueden impedirte
+  borrar tu propia cuenta.
+
+---
+
+## 016 — El tipo de una categoría con movimientos no se puede cambiar
+
+**Fecha:** 2026-08-01 · **Fase:** 4
+
+- **Contexto:** `tipo` está duplicado en `transacciones` y en `categorias`.
+- **Decisión:** al crear o editar una transacción se exige que su `tipo` coincida con el de su
+  categoría (`400 TIPO_NO_COINCIDE`), y no se permite cambiar el tipo de una categoría que ya
+  tiene movimientos (`409`).
+- **Por qué:** la duplicación es deliberada (deja que el reporte de gastos por categoría filtre
+  sin resolver la categoría de cada documento), pero solo sirve si se mantiene coherente. Estas
+  dos son las únicas puertas por donde puede entrar una incoherencia.
+
+---
+
+## 017 — Las fechas se recortan a milisegundos antes de guardarlas
+
+**Fecha:** 2026-08-01 · **Fase:** 4
+
+- **Contexto:** una prueba de integración falló comparando el `creado_en` que devolvió el POST
+  con el que devolvía un GET posterior.
+- **Causa:** MongoDB guarda las fechas con precisión de milisegundos y `time.Now()` de Go trae
+  nanosegundos. La respuesta del POST traía una hora más precisa que la realmente almacenada.
+- **Decisión:** `servicios/tiempo.go` recorta a milisegundos toda fecha antes de guardarla.
+- **Por qué:** lo que responde la API tiene que ser exactamente lo que quedó en la base. Si no,
+  el frontend compara dos valores del mismo campo y no coinciden.
+
+---
+
+## 018 — El texto de búsqueda se escapa antes de armar la expresión regular
+
+**Fecha:** 2026-08-01 · **Fase:** 4
+
+- **Contexto:** el filtro `busqueda` de transacciones se traduce a un `$regex` de MongoDB.
+- **Decisión:** el texto pasa por `regexp.QuoteMeta` antes de entrar en la consulta.
+- **Por qué:** sin eso, buscar `.*` recorrería la colección entera (una forma barata de tumbar el
+  servidor) y una expresión mal formada haría fallar la consulta con un error interno. Hay una
+  prueba de integración que comprueba que buscar `.*` devuelve cero resultados.
+
+---
+
 ## Pendientes anotados (se resuelven en su fase)
 
 - **Fase 3 — Refresh token sin estado:** el refresh token no se guarda en la base, así que se puede

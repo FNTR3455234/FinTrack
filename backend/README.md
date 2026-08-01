@@ -137,8 +137,11 @@ texto del mensaje. El catálogo completo está en
 | POST | `/api/v1/auth/refresh` | Renueva el token de acceso |
 | 🔒 GET | `/api/v1/auth/perfil` | Datos del usuario del token |
 | 🔒 PUT | `/api/v1/auth/perfil` | Edita nombre y moneda |
+| 🔒 | `/api/v1/cuentas`, `/api/v1/cuentas/:id` | CRUD de cuentas |
+| 🔒 | `/api/v1/categorias`, `/api/v1/categorias/:id` | CRUD de categorías |
+| 🔒 | `/api/v1/transacciones`, `/api/v1/transacciones/:id` | CRUD de transacciones con filtros y paginación |
 
-El resto de los endpoints llega en las fases 4 a 6.
+El resto de los endpoints llega en las fases 5 y 6.
 
 ### `GET /health`
 
@@ -225,6 +228,89 @@ curl -X PUT -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json
 
 El correo **no** se puede cambiar: es la credencial de acceso y la llave única.
 
+## CRUD de cuentas, categorías y transacciones
+
+Los tres recursos siguen la misma forma: `GET` lista, `POST` crea (201), `GET /:id` lee,
+`PUT /:id` reemplaza y `DELETE /:id` borra (204).
+
+### Cuentas
+
+```bash
+curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"nombre":"BBVA Debito","tipo":"debito","saldo_inicial":18000,"color":"#2563EB"}' \
+  http://localhost:8080/api/v1/cuentas
+```
+
+| Campo | Reglas |
+|---|---|
+| `nombre` | obligatorio, 1 a 60 caracteres |
+| `tipo` | `efectivo`, `debito`, `credito` o `ahorro` |
+| `saldo_inicial` | obligatorio; acepta 0 y negativos (tarjeta de crédito) |
+| `color` | obligatorio, hexadecimal de 7 caracteres (`#2563EB`) |
+| `archivada` | opcional |
+
+`GET /cuentas` devuelve solo las activas; con `?incluir_archivadas=true` salen todas.
+
+### Categorías
+
+Mismos campos más `icono`, y `tipo` es `ingreso` o `gasto`. `GET /categorias` acepta
+`?tipo=gasto` y `?incluir_archivadas=true`.
+
+**No se puede cambiar el tipo de una categoría que ya tiene movimientos** (`409`): dejaría gastos
+colgando de una categoría de ingreso y los reportes darían números sin sentido.
+
+### Transacciones
+
+```bash
+curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"cuenta_id":"...","categoria_id":"...","tipo":"gasto","monto":850.50,
+       "descripcion":"Despensa","fecha":"2026-07-03T12:00:00Z","notas":"con cupon"}' \
+  http://localhost:8080/api/v1/transacciones
+```
+
+El `monto` siempre es positivo: lo que decide si suma o resta es el `tipo`. Se redondea a dos
+decimales al guardar.
+
+**El `tipo` del movimiento tiene que coincidir con el de su categoría** (`400 TIPO_NO_COINCIDE`).
+El tipo está duplicado a propósito —así el reporte de gastos por categoría filtra sin resolver la
+categoría de cada documento— y esta es la única puerta por donde entra.
+
+#### Filtros del listado
+
+`GET /transacciones` acepta:
+
+| Parámetro | Valores | Notas |
+|---|---|---|
+| `desde`, `hasta` | `AAAA-MM-DD` | `hasta` incluye el día completo, no corta a las 00:00 |
+| `tipo` | `ingreso`, `gasto` | |
+| `categoria_id`, `cuenta_id` | ObjectID | |
+| `busqueda` | texto | Busca en descripción y notas, sin distinguir mayúsculas |
+| `pagina` | ≥ 1 | Por defecto 1 |
+| `limite` | 1 a 100 | Por defecto 20 |
+| `orden` | `fecha_desc` (por defecto), `fecha_asc`, `monto_desc`, `monto_asc` | |
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" \
+  "http://localhost:8080/api/v1/transacciones?desde=2026-07-01&hasta=2026-07-31&tipo=gasto&limite=5"
+```
+
+```json
+{ "datos": [ ... ], "meta": { "pagina": 1, "limite": 5, "total": 17, "total_paginas": 4 } }
+```
+
+Los valores de paginación fuera de rango se ajustan (`pagina=0` pasa a 1, `limite=500` a 100),
+pero una fecha o un identificador mal escritos sí devuelven `400`: ignorarlos en silencio daría
+un listado que no es el que se pidió.
+
+El texto de `busqueda` se escapa antes de armar la expresión regular, así que buscar `.*` no
+recorre toda la colección.
+
+### Borrado
+
+`DELETE` de una cuenta o categoría **con movimientos** responde `409`
+(`CUENTA_CON_TRANSACCIONES` / `CATEGORIA_CON_TRANSACCIONES`). No hay borrado en cascada: perder
+los movimientos por equivocación no tiene vuelta atrás. Para eso existe `archivada`.
+
 ## Autenticación
 
 Dos tokens, firmados con **secretos distintos**:
@@ -301,38 +387,45 @@ los tenga sin depender de que alguien haya corrido el script.
 ## Pruebas
 
 ```bash
-make test                        # desde la raiz (Windows: .\make.ps1 test)
-go test ./... -cover             # o directamente, desde backend/
+make test               # unitarias; las de integracion se saltan solas
+make test-integracion   # levanta MongoDB y corre TODO
 ```
 
-Las pruebas de `internal/db` son de integración y necesitan MongoDB. Se **saltan solas** si no
-está la variable `MONGO_URI_PRUEBAS`, para que `go test ./...` funcione en cualquier máquina:
+En Windows: `.\make.ps1 test` y `.\make.ps1 test-integracion`.
+
+Hay dos clases de prueba:
+
+- **Unitarias.** Los servicios se prueban con repositorios en memoria que también filtran por
+  `usuario_id`, para que una prueba de aislamiento no pase por accidente.
+- **De integración.** Necesitan MongoDB y se **saltan solas** si no está la variable
+  `MONGO_URI_PRUEBAS`, para que `go test ./...` funcione en cualquier máquina. Usan bases
+  aparte (`fintrack_pruebas_*`) que se borran al terminar, así que nunca tocan los datos de
+  desarrollo.
+
+Las de `internal/rutas` levantan la **API completa contra MongoDB de verdad** —router,
+middlewares, handlers, servicios y repositorios, sin ningún doble— y cubren el CRUD de los tres
+recursos, los filtros, la paginación y la comprobación de que **dos usuarios nunca ven ni tocan
+los datos del otro**.
+
+Para correr solo esas:
 
 ```bash
 make up
 MONGO_URI_PRUEBAS="mongodb://fintrack_admin:fintrack_dev_2026@localhost:27017/?authSource=admin" \
-  go test ./internal/db/... -v
+  go test ./internal/rutas/... -v
 ```
 
-Usan una base aparte (`fintrack_pruebas_db`) que se borra al terminar, así que nunca tocan los
-datos de desarrollo.
-
-Las de `internal/repositorios` también son de integración y siguen la misma regla.
-
-Cobertura actual:
+**Cobertura total: 83.2 %** (`go tool cover -func=coverage.out`). Por paquete, con las pruebas
+de integración corriendo:
 
 | Paquete | Cobertura |
 |---|---|
-| `internal/config` | 93.5 % |
-| `internal/db` | 90.0 % (con MongoDB) |
-| `internal/errores` | 100 % |
-| `internal/handlers` | 81.3 % |
+| `internal/errores` · `internal/respuestas` · `internal/rutas` | 100 % |
 | `internal/middleware` | 99.0 % |
-| `internal/repositorios` | 88.9 % (con MongoDB) |
-| `internal/respuestas` | 100 % |
-| `internal/rutas` | 100 % |
-| `internal/servicios` | 87.5 % |
+| `internal/config` | 93.5 % |
+| `internal/db` | 90.0 % |
+| `internal/servicios` | 85.6 % |
 
-Las pruebas de `internal/rutas` recorren la pila completa (router, middlewares, handlers,
-servicio y tokens reales) con un repositorio en memoria, e incluyen la comprobación de que
-**dos usuarios distintos nunca ven los datos del otro**.
+`internal/handlers` y `internal/repositorios` dan un número bajo medidos por separado porque casi
+todo su código lo ejercitan las pruebas de `internal/rutas`; por eso el total se mide con
+`-coverpkg=./...`, que sí cuenta esa cobertura cruzada.

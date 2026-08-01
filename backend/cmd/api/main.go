@@ -58,14 +58,20 @@ func main() {
 		cfg.JWTSecretoAcceso, cfg.JWTSecretoRefresco,
 		cfg.JWTMinutosAcceso, cfg.JWTDiasRefresco,
 	)
-	servicioAuth := servicios.NuevoAuth(repositorios.NuevoUsuarios(conexion.BD), tokens)
+	repoUsuarios := repositorios.NuevoUsuarios(conexion.BD)
+	repoCuentas := repositorios.NuevoCuentas(conexion.BD)
+	repoCategorias := repositorios.NuevoCategorias(conexion.BD)
+	repoTransacciones := repositorios.NuevoTransacciones(conexion.BD)
 
 	servidor := &http.Server{
 		Addr: cfg.Direccion(),
 		Handler: rutas.Configurar(cfg, rutas.Dependencias{
-			BD:        conexion,
-			Auth:      servicioAuth,
-			Validador: tokens,
+			BD:            conexion,
+			Auth:          servicios.NuevoAuth(repoUsuarios, tokens),
+			Validador:     tokens,
+			Cuentas:       servicios.NuevoCuentas(repoCuentas, repoTransacciones),
+			Categorias:    servicios.NuevoCategorias(repoCategorias, repoTransacciones),
+			Transacciones: servicios.NuevoTransacciones(repoTransacciones, repoCuentas, repoCategorias),
 		}),
 		// Sin estos limites una conexion lenta puede quedarse tomada de forma
 		// indefinida.
