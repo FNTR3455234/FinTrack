@@ -1,0 +1,37 @@
+# Compose de DESARROLLO: levanta unicamente MongoDB.
+# El backend y el frontend se corren a mano (make dev / npm run dev) para tener
+# recarga rapida. El stack completo en contenedores vive en docker-compose.yml (fase 8).
+#
+# Uso:  make up   /   .\make.ps1 up
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: fintrack-mongo-dev
+    restart: unless-stopped
+    ports:
+      # Se expone al host para poder conectarse desde el backend local y desde Compass.
+      - "27017:27017"
+    environment:
+      # Se usa autenticacion desde el primer dia para que el MONGO_URI de desarrollo
+      # tenga la misma forma que el de produccion (con ?authSource=admin).
+      MONGO_INITDB_ROOT_USERNAME: fintrack_admin
+      MONGO_INITDB_ROOT_PASSWORD: fintrack_dev_2026
+      MONGO_INITDB_DATABASE: fintrack
+    volumes:
+      # Volumen nombrado: los datos sobreviven a un "down" (se borran con "down -v").
+      - mongo_datos:/data/db
+      # NOTA (fase 1): aqui se montaran SOLO 01_crear_colecciones.js y 02_insertar_datos.js
+      # en /docker-entrypoint-initdb.d. No se monta la carpeta database/ completa porque
+      # ese directorio ejecuta tambien los .sh y dispararia 03_respaldo.sh en cada init.
+    healthcheck:
+      # Mongo tarda unos segundos en aceptar conexiones; el healthcheck permite que
+      # otros servicios (fase 8) esperen con depends_on: condition: service_healthy.
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand({ ping: 1 }).ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+volumes:
+  mongo_datos:

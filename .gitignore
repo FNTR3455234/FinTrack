@@ -1,0 +1,26 @@
+# Dependencias y artefactos de compilacion
+node_modules/
+dist/
+bin/
+
+# Variables de entorno: el .env real nunca se versiona, el ejemplo si
+.env
+.env.local
+!.env.example
+
+# Cobertura y reportes de pruebas de Go
+coverage.out
+coverage.html
+
+# Respaldos generados por database/03_respaldo.sh
+respaldos/
+
+# Ruido del sistema operativo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Ruido de editores
+.idea/
+.vscode/
+*.swp

@@ -1,0 +1,78 @@
+# Bitácora de decisiones técnicas
+
+Registro corto de las decisiones que no son obvias al leer el código, para poder
+justificarlas después. Formato por entrada: **decisión, contexto, alternativas, por qué**.
+
+---
+
+## 001 — El dinero se guarda como `float64` en pesos
+
+**Fecha:** 2026-07-31 · **Fase:** 0
+
+- **Contexto:** `monto`, `saldo_inicial` y `monto_limite` necesitan un tipo en Go y en MongoDB.
+- **Alternativas:** `int64` en centavos (exacto, pero obliga a convertir en la semilla, el CSV,
+  los formularios y las gráficas); `Decimal128` de Mongo (el tipo correcto para dinero, pero Go
+  no puede operar aritméticamente con él sin pasar por `string`/`big.Float`).
+- **Decisión:** `float64` en pesos. En Mongo, Go y JSON se ve igual: `"monto": 1250.50`.
+- **Por qué:** con el volumen de este proyecto (cientos de transacciones, sumas de dos decimales)
+  el error de punto flotante nunca alcanza el centavo, y el código queda explicable línea por
+  línea sin conversiones en cada capa. Los totales de los reportes se redondean a 2 decimales al
+  devolverse.
+
+---
+
+## 002 — `Makefile` y además `make.ps1`
+
+**Fecha:** 2026-07-31 · **Fase:** 0
+
+- **Contexto:** el desarrollo es en Windows, donde `make` no viene instalado; el CI corre en
+  Ubuntu y la rúbrica pide un Makefile.
+- **Alternativas:** solo `Makefile` e instalar `make` con winget; solo un script de PowerShell.
+- **Decisión:** los dos, con los mismos targets y los mismos comandos.
+- **Por qué:** el `Makefile` es el artefacto que se entrega y el que usa el CI; `make.ps1` evita
+  depender de una instalación manual para trabajar en el día a día. Si se cambia un target hay
+  que cambiarlo en ambos archivos.
+
+---
+
+## 003 — MongoDB standalone, sin replica set
+
+**Fecha:** 2026-07-31 · **Fase:** 0
+
+- **Contexto:** las transacciones multi-documento de MongoDB requieren un replica set, aunque sea
+  de un solo nodo.
+- **Alternativas:** configurar un replica set de un nodo en Compose desde el inicio.
+- **Decisión:** `mongo:7` standalone.
+- **Por qué:** ninguna operación del diseño necesita atomicidad entre varios documentos: cada
+  escritura toca una sola colección. Añadir el replica set complicaría el arranque (`rs.initiate`,
+  esperas) sin ganar nada. Si más adelante hace falta, se cambia aquí y se anota.
+
+---
+
+## 004 — Nombres en español en JSON y en MongoDB
+
+**Fecha:** 2026-07-31 · **Fase:** 0
+
+- **Contexto:** el código Go usa identificadores exportados en inglés por convención del lenguaje,
+  pero los campos de la API y de la base son parte del entregable.
+- **Decisión:** campos JSON y BSON en español (`monto`, `fecha`, `categoria_id`), en `snake_case`;
+  comentarios, mensajes de error y commits también en español.
+- **Por qué:** el proyecto se defiende en español y los códigos de error (`CATEGORIA_NO_ENCONTRADA`)
+  se leen igual en la API, en Postman y en el frontend.
+
+---
+
+## Pendientes anotados (se resuelven en su fase)
+
+- **Fase 3 — Refresh token sin estado:** el refresh token no se guarda en la base, así que se puede
+  renovar pero no revocar antes de sus 7 días. Aceptable para el alcance; se documentará como
+  limitación conocida en vez de añadir una colección de sesiones.
+- **Fase 4 — `tipo` duplicado:** una transacción guarda `tipo` y su categoría también. Es
+  deliberado (la agregación de gastos por categoría filtra sin `$lookup` previo), pero el servicio
+  debe validar que `transaccion.tipo == categoria.tipo`.
+- **Fase 4 — Borrado de cuentas y categorías:** si tienen transacciones asociadas, `DELETE`
+  responde `409` y el cliente debe archivar (`archivada: true`) en lugar de borrar. Sin cascada.
+- **Fase 5 — Zona horaria:** las fechas se guardan en UTC. Decidir si los rangos de mes se calculan
+  en UTC o en `America/Mexico_City` (afecta a las transacciones de fin de mes por la noche).
+- **Fase 5 — Saldo de cuentas:** no se guarda un saldo actual, solo `saldo_inicial`; el saldo se
+  calcula agregando transacciones para no tener dos fuentes de verdad.
