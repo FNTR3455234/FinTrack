@@ -108,6 +108,45 @@ justificarlas después. Formato por entrada: **decisión, contexto, alternativas
 
 ---
 
+## 008 — El módulo declara `go 1.25`, no `go 1.22`
+
+**Fecha:** 2026-07-31 · **Fase:** 2
+
+- **Contexto:** el plan pedía Go 1.22+, pero `go mod tidy` subió la directiva a `go 1.25.0`.
+- **Causa:** Gin 1.12 declara `go 1.25.0` y `golang.org/x/net` también; no es algo que se pueda
+  bajar sin fijar versiones viejas de media docena de dependencias.
+- **Alternativas:** fijar Gin en v1.10.1 (probado: sigue sin bastar, `x/net` lo exige igual).
+- **Decisión:** dejar `go 1.25.0` y usar las versiones actuales de las dependencias.
+- **Por qué:** 1.25 cumple de sobra el "1.22 o superior" del plan, y pelearse con el ecosistema
+  para bajar un número en go.mod no aporta nada. El CI de la fase 8 fijará Go 1.25.
+
+---
+
+## 009 — Un paquete `respuestas` aparte, fuera de `handlers`
+
+**Fecha:** 2026-07-31 · **Fase:** 2
+
+- **Contexto:** la estructura del plan no incluía un paquete para el formato uniforme de
+  respuesta.
+- **Alternativas:** ponerlo dentro de `handlers`.
+- **Decisión:** `internal/respuestas`, con `OK`, `Creado`, `Paginado`, `SinContenido` y `Fallo`.
+- **Por qué:** los middlewares también tienen que responder con el mismo formato (el de
+  autenticación devuelve 401, el de recuperación 500). Si viviera en `handlers`, `middleware`
+  tendría que importar `handlers`, que es justo al revés del flujo de dependencias.
+
+---
+
+## 010 — Middlewares escritos a mano en vez de librerías
+
+**Fecha:** 2026-07-31 · **Fase:** 2
+
+- **Contexto:** hay librerías conocidas para CORS (`gin-contrib/cors`) y bitácora.
+- **Decisión:** escribir CORS, bitácora, id de petición y recuperación a mano.
+- **Por qué:** son entre 30 y 60 líneas cada uno, se explican completos en la revisión oral y
+  ahorran cuatro dependencias. La rúbrica además pide middlewares propios.
+
+---
+
 ## Pendientes anotados (se resuelven en su fase)
 
 - **Fase 3 — Refresh token sin estado:** el refresh token no se guarda en la base, así que se puede
