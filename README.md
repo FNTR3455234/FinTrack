@@ -3,7 +3,7 @@
 Aplicación web de finanzas personales y presupuestos: registra tus ingresos y gastos, organízalos
 por cuentas y categorías, ponles un límite mensual y mira a dónde se te va el dinero.
 
-> **Estado:** en desarrollo. Fase 0 de 10 completada — ver la [tabla de avance](#avance-por-fases).
+> **Estado:** en desarrollo. Fases 0 y 1 de 10 completadas — ver la [tabla de avance](#avance-por-fases).
 
 ## Stack
 
@@ -23,18 +23,21 @@ Requisitos: [Docker Desktop](https://www.docker.com/products/docker-desktop/), G
 git clone https://github.com/FNTR3455234/FinTrack.git
 cd FinTrack
 
-# 1. Levanta MongoDB
+# 1. Levanta MongoDB (la primera vez crea el esquema y carga los datos de ejemplo solo)
 make up                 # Windows sin make:  .\make.ps1 up
 
 # 2. Configura el backend (a partir de la fase 2)
 cp backend/.env.example backend/.env
 
-# 3. Carga el esquema y los datos de ejemplo (a partir de la fase 1)
+# 3. Para recargar el esquema y los datos de ejemplo cuando quieras
 make seed
 ```
 
 Mongo queda escuchando en `localhost:27017` con el usuario `fintrack_admin`. Para detenerlo:
 `make down` (los datos se conservan) o `docker compose -f docker-compose.dev.yml down -v` (los borra).
+
+**Usuario de ejemplo:** `demo@fintrack.mx` / `Demo1234!` — trae 6 meses de historia
+(3 cuentas, 10 categorías, 120 transacciones y 6 presupuestos).
 
 El stack completo en contenedores (`docker compose up` y listo) llega en la fase 8.
 
@@ -45,7 +48,7 @@ Los mismos targets existen en `Makefile` (Linux/macOS/CI) y en `make.ps1` (Windo
 | Atajo | Qué hace | Disponible desde |
 |---|---|---|
 | `make up` / `make down` | Levanta o detiene MongoDB | fase 0 |
-| `make seed` | Carga los datos semilla | fase 1 |
+| `make seed` | Recrea el esquema y carga los datos semilla | fase 1 |
 | `make dev` | Levanta Mongo y arranca la API | fase 2 |
 | `make lint` | `go vet` + `golangci-lint` | fase 2 |
 | `make test` | Pruebas de Go con cobertura | fase 3 |
@@ -59,12 +62,13 @@ Los mismos targets existen en `Makefile` (Linux/macOS/CI) y en `make.ps1` (Windo
 |---|---|
 | [`docs/arquitectura.md`](docs/arquitectura.md) | Capas del backend, aislamiento por usuario, flujo de autenticación |
 | [`docs/decisiones.md`](docs/decisiones.md) | Bitácora de decisiones técnicas y su porqué |
+| [`database/modelo.md`](database/modelo.md) | Diagrama entidad-relación, relaciones e índices |
 
 ### Entregables
 
 | # | Entregable | README |
 |---|---|---|
-| 1 | Base de datos: modelo, scripts de creación, semilla y respaldo | `database/README.md` _(fase 1)_ |
+| 1 | Base de datos: modelo, scripts de creación, semilla y respaldo | [`database/README.md`](database/README.md) ✅ |
 | 2 | Backend: API REST en Go | `backend/README.md` _(fase 2)_ |
 | 3 | Frontend: cliente en React | `frontend/README.md` _(fase 7)_ |
 | 4 | Pruebas: colección de Postman | `postman/README.md` _(fase 6)_ |
@@ -74,7 +78,7 @@ Los mismos targets existen en `Makefile` (Linux/macOS/CI) y en `make.ps1` (Windo
 | Fase | Contenido | Estado |
 |---|---|---|
 | 0 | Estructura del repo, `.gitignore`, Compose de desarrollo, Makefile | ✅ |
-| 1 | Base de datos: modelo, `$jsonSchema`, índices, semilla, respaldo | ⏳ |
+| 1 | Base de datos: modelo, `$jsonSchema`, índices, semilla, respaldo | ✅ |
 | 2 | Backend base: config, conexión, `/health`, errores, middlewares, apagado ordenado | ⏳ |
 | 3 | Autenticación: registro, login, refresh, perfil, rate limit | ⏳ |
 | 4 | CRUD de cuentas, categorías y transacciones con filtros y paginación | ⏳ |

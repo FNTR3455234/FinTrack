@@ -62,6 +62,52 @@ justificarlas después. Formato por entrada: **decisión, contexto, alternativas
 
 ---
 
+## 005 — Esquema estricto y `Double()` explícito en la semilla
+
+**Fecha:** 2026-07-31 · **Fase:** 1
+
+- **Contexto:** el validador `$jsonSchema` exige `bsonType: "double"` para el dinero, pero la
+  primera carga de la semilla falló con `Document failed validation`.
+- **Causa:** `mongosh` guarda los números enteros de JavaScript como **int32** (a diferencia del
+  shell antiguo, que usaba double siempre), así que `saldo_inicial: 2500` llegaba como int.
+- **Alternativas:** aflojar el esquema a `["double", "int", "long"]`.
+- **Decisión:** mantener el esquema estricto en `double` y envolver los montos de la semilla con
+  `Double()` desde la función `pesos()`.
+- **Por qué:** `double` es exactamente lo que escribe Go (`float64`), que es el único cliente real.
+  Aflojar el tipo habría escondido el problema y permitido que convivieran dos representaciones
+  del dinero en la misma colección. Los campos `mes` y `anio` sí aceptan `["int", "long"]` porque
+  Go puede mandar int32 o int64 según el valor.
+
+---
+
+## 006 — La semilla es determinista y está anclada a una fecha fija
+
+**Fecha:** 2026-07-31 · **Fase:** 1
+
+- **Contexto:** los 120 movimientos de ejemplo se reparten en 6 meses.
+- **Alternativas:** generar montos aleatorios y fechas relativas a "hoy".
+- **Decisión:** `_id` fijos, montos calculados con una lista fija de factores de variación y
+  fechas ancladas a las constantes `ANIO_FINAL` / `MES_FINAL` (julio de 2026).
+- **Por qué:** las pruebas de la fase 5 tienen que poder esperar totales exactos de las dos
+  agregaciones. Con datos aleatorios habría que aflojar las aserciones. El costo es que la
+  semilla envejece: se re-ancla cambiando dos constantes y volviendo a correr `make seed`.
+
+---
+
+## 007 — `$setWindowFields` para el porcentaje de gasto por categoría
+
+**Fecha:** 2026-07-31 · **Fase:** 1
+
+- **Contexto:** el reporte de gastos por categoría necesita el porcentaje de cada categoría sobre
+  el gasto total del periodo, y el total solo se conoce después del `$group`.
+- **Alternativas:** una segunda consulta para el total, o un `$group` de todo en un solo documento
+  seguido de `$unwind`.
+- **Decisión:** una etapa `$setWindowFields` con ventana `["unbounded", "unbounded"]`.
+- **Por qué:** resuelve el total en la misma consulta, sin ida y vuelta extra a la base y sin
+  desarmar y rearmar el arreglo de resultados. Es una etapa y se explica en una línea.
+
+---
+
 ## Pendientes anotados (se resuelven en su fase)
 
 - **Fase 3 — Refresh token sin estado:** el refresh token no se guarda en la base, así que se puede

@@ -21,9 +21,15 @@ services:
     volumes:
       # Volumen nombrado: los datos sobreviven a un "down" (se borran con "down -v").
       - mongo_datos:/data/db
-      # NOTA (fase 1): aqui se montaran SOLO 01_crear_colecciones.js y 02_insertar_datos.js
-      # en /docker-entrypoint-initdb.d. No se monta la carpeta database/ completa porque
-      # ese directorio ejecuta tambien los .sh y dispararia 03_respaldo.sh en cada init.
+      # Se montan SOLO estos dos archivos, no la carpeta database/ completa: ese
+      # directorio ejecuta tambien los .sh y dispararia 03_respaldo.sh en cada init.
+      # Mongo los corre en orden alfabetico y unicamente la primera vez, cuando el
+      # volumen esta vacio. Para recargarlos despues: make seed.
+      - ./database/01_crear_colecciones.js:/docker-entrypoint-initdb.d/01_crear_colecciones.js:ro
+      - ./database/02_insertar_datos.js:/docker-entrypoint-initdb.d/02_insertar_datos.js:ro
+      # La carpeta completa, montada aparte y en una ruta que Mongo NO ejecuta sola.
+      # Sirve para volver a correr los scripts a mano (make seed) y para el respaldo.
+      - ./database:/scripts:ro
     healthcheck:
       # Mongo tarda unos segundos en aceptar conexiones; el healthcheck permite que
       # otros servicios (fase 8) esperen con depends_on: condition: service_healthy.

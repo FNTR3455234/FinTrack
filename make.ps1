@@ -14,7 +14,7 @@ $ErrorActionPreference = "Stop"
 # Todas las rutas son relativas a la raiz del repo, no al directorio donde se invoca.
 $raiz = $PSScriptRoot
 $composeDev = @("compose", "-f", "$raiz\docker-compose.dev.yml")
-$mongosh = @("mongosh", "-u", "fintrack_admin", "-p", "fintrack_dev_2026", "--authenticationDatabase", "admin")
+$mongosh = @("mongosh", "-u", "fintrack_admin", "-p", "fintrack_dev_2026", "--authenticationDatabase", "admin", "--quiet")
 
 function Invoke-Ayuda {
     Write-Host "FinTrack - atajos disponibles:"
@@ -23,7 +23,7 @@ function Invoke-Ayuda {
     Write-Host "  .\make.ps1 dev     Levanta Mongo y arranca la API en modo desarrollo   [fase 2]"
     Write-Host "  .\make.ps1 test    Corre las pruebas de Go con cobertura               [fase 3]"
     Write-Host "  .\make.ps1 lint    Corre go vet y golangci-lint                        [fase 2]"
-    Write-Host "  .\make.ps1 seed    Carga los datos semilla en MongoDB                  [fase 1]"
+    Write-Host "  .\make.ps1 seed    Recrea el esquema y carga los datos semilla"
     Write-Host "  .\make.ps1 build   Compila el backend y el frontend                    [fase 7]"
 }
 
@@ -60,9 +60,11 @@ function Invoke-Lint {
 }
 
 function Invoke-Seed {
-    # Se envia el script por stdin al mongosh que corre dentro del contenedor,
-    # asi no hace falta tener mongosh instalado en Windows.
-    Get-Content "$raiz\database\02_insertar_datos.js" | & docker @composeDev exec -T mongo @mongosh fintrack
+    # Los scripts se ejecutan con el mongosh que ya vive dentro del contenedor
+    # (asi no hace falta instalarlo en Windows). La carpeta database/ esta montada
+    # en /scripts. Los dos scripts son idempotentes.
+    & docker @composeDev exec -T mongo @mongosh --file /scripts/01_crear_colecciones.js
+    & docker @composeDev exec -T mongo @mongosh --file /scripts/02_insertar_datos.js
 }
 
 function Invoke-Build {
