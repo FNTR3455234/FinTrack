@@ -35,6 +35,8 @@ type Dependencias struct {
 	Cuentas       handlers.ServicioCuentas
 	Categorias    handlers.ServicioCategorias
 	Transacciones handlers.ServicioTransacciones
+	Presupuestos  handlers.ServicioPresupuestos
+	Reportes      handlers.ServicioReportes
 }
 
 // Configurar devuelve el router listo para servir.
@@ -82,8 +84,9 @@ func Configurar(cfg *config.Config, deps Dependencias) *gin.Engine {
 			registrarCRUD(privadas, "/cuentas", crudDe(handlers.NuevoCuentas(deps.Cuentas)))
 			registrarCRUD(privadas, "/categorias", crudDe(handlers.NuevoCategorias(deps.Categorias)))
 			registrarCRUD(privadas, "/transacciones", crudDe(handlers.NuevoTransacciones(deps.Transacciones)))
+			registrarCRUD(privadas, "/presupuestos", crudDe(handlers.NuevoPresupuestos(deps.Presupuestos)))
 
-			// Fase 5: /presupuestos, /reportes
+			registrarReportes(privadas, handlers.NuevoReportes(deps.Reportes))
 		}
 	}
 
@@ -121,6 +124,23 @@ func registrarCRUD(grupo *gin.RouterGroup, base string, h crud) {
 	grupo.GET(base+"/:id", h.obtener)
 	grupo.PUT(base+"/:id", h.actualizar)
 	grupo.DELETE(base+"/:id", h.eliminar)
+}
+
+// registrarReportes engancha las consultas de analisis.
+//
+// Van todas bajo /reportes y todas son de solo lectura: aqui no se escribe
+// nada, se responden preguntas sobre lo que ya esta guardado.
+func registrarReportes(grupo *gin.RouterGroup, h *handlers.Reportes) {
+	reportes := grupo.Group("/reportes")
+	{
+		// Las dos consultas relacionales de la entrega.
+		reportes.GET("/gastos-por-categoria", h.GastosPorCategoria)
+		reportes.GET("/estado-presupuestos", h.EstadoPresupuestos)
+
+		reportes.GET("/resumen", h.Resumen)
+		reportes.GET("/tendencia", h.Tendencia)
+		reportes.GET("/saldos", h.Saldos)
+	}
 }
 
 // registrarErroresDeRuta hace que un 404 o un 405 respondan con el mismo

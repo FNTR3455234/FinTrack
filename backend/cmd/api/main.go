@@ -62,6 +62,8 @@ func main() {
 	repoCuentas := repositorios.NuevoCuentas(conexion.BD)
 	repoCategorias := repositorios.NuevoCategorias(conexion.BD)
 	repoTransacciones := repositorios.NuevoTransacciones(conexion.BD)
+	repoPresupuestos := repositorios.NuevoPresupuestos(conexion.BD)
+	repoReportes := repositorios.NuevoReportes(conexion.BD)
 
 	servidor := &http.Server{
 		Addr: cfg.Direccion(),
@@ -70,8 +72,10 @@ func main() {
 			Auth:          servicios.NuevoAuth(repoUsuarios, tokens),
 			Validador:     tokens,
 			Cuentas:       servicios.NuevoCuentas(repoCuentas, repoTransacciones),
-			Categorias:    servicios.NuevoCategorias(repoCategorias, repoTransacciones),
-			Transacciones: servicios.NuevoTransacciones(repoTransacciones, repoCuentas, repoCategorias),
+			Categorias:    servicios.NuevoCategorias(repoCategorias, repoTransacciones, repoPresupuestos),
+			Transacciones: servicios.NuevoTransacciones(repoTransacciones, repoCuentas, repoCategorias, repoReportes),
+			Presupuestos:  servicios.NuevoPresupuestos(repoPresupuestos, repoCategorias),
+			Reportes:      servicios.NuevoReportes(repoReportes),
 		}),
 		// Sin estos limites una conexion lenta puede quedarse tomada de forma
 		// indefinida.

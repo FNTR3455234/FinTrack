@@ -3,7 +3,7 @@
 Aplicación web de finanzas personales y presupuestos: registra tus ingresos y gastos, organízalos
 por cuentas y categorías, ponles un límite mensual y mira a dónde se te va el dinero.
 
-> **Estado:** en desarrollo. Fases 0 a 4 de 10 completadas — ver la [tabla de avance](#avance-por-fases).
+> **Estado:** en desarrollo. Fases 0 a 5 de 10 completadas — ver la [tabla de avance](#avance-por-fases).
 
 ## Stack
 
@@ -83,7 +83,7 @@ Los mismos targets existen en `Makefile` (Linux/macOS/CI) y en `make.ps1` (Windo
 | 2 | Backend base: config, conexión, `/health`, errores, middlewares, apagado ordenado | ✅ |
 | 3 | Autenticación: registro, login, refresh, perfil, rate limit | ✅ |
 | 4 | CRUD de cuentas, categorías y transacciones con filtros y paginación | ✅ |
-| 5 | Presupuestos, consultas relacionales, resumen, tendencia y alertas | ⏳ |
+| 5 | Presupuestos, consultas relacionales, resumen, tendencia y alertas | ✅ |
 | 6 | Exportar/importar CSV, Swagger, colección de Postman | ⏳ |
 | 7 | Frontend completo | ⏳ |
 | 8 | Dockerfiles, Compose completo, CI, arquitectura | ⏳ |

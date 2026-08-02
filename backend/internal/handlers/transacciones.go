@@ -12,7 +12,7 @@ import (
 
 // ServicioTransacciones es lo que los handlers necesitan del servicio.
 type ServicioTransacciones interface {
-	Crear(ctx context.Context, usuarioID bson.ObjectID, p modelos.PeticionTransaccion) (*modelos.Transaccion, error)
+	Crear(ctx context.Context, usuarioID bson.ObjectID, p modelos.PeticionTransaccion) (*modelos.TransaccionCreada, error)
 	Listar(ctx context.Context, usuarioID bson.ObjectID, f modelos.FiltroTransacciones) ([]modelos.Transaccion, int64, error)
 	PorID(ctx context.Context, usuarioID, id bson.ObjectID) (*modelos.Transaccion, error)
 	Actualizar(ctx context.Context, usuarioID, id bson.ObjectID, p modelos.PeticionTransaccion) (*modelos.Transaccion, error)
@@ -69,6 +69,9 @@ func (h *Transacciones) Obtener(c *gin.Context) {
 }
 
 // Crear atiende POST /transacciones.
+//
+// La respuesta trae la transaccion y, cuando el gasto deja su categoria cerca
+// del limite del mes, un campo "alerta" con el estado del presupuesto.
 func (h *Transacciones) Crear(c *gin.Context) {
 	usuarioID, ok := usuarioAutenticado(c)
 	if !ok {

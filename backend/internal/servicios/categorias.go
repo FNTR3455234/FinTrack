@@ -29,11 +29,12 @@ type ContadorPorCategoria interface {
 type Categorias struct {
 	categorias    RepositorioCategorias
 	transacciones ContadorPorCategoria
+	presupuestos  ContadorPorCategoria
 }
 
 // NuevoCategorias arma el servicio con sus dependencias.
-func NuevoCategorias(categorias RepositorioCategorias, transacciones ContadorPorCategoria) *Categorias {
-	return &Categorias{categorias: categorias, transacciones: transacciones}
+func NuevoCategorias(categorias RepositorioCategorias, transacciones, presupuestos ContadorPorCategoria) *Categorias {
+	return &Categorias{categorias: categorias, transacciones: transacciones, presupuestos: presupuestos}
 }
 
 // Crear da de alta una categoria del usuario.
@@ -105,7 +106,12 @@ func (s *Categorias) Actualizar(ctx context.Context, usuarioID, id bson.ObjectID
 	return categoria, nil
 }
 
-// Eliminar borra una categoria, pero solo si no tiene movimientos.
+// Eliminar borra una categoria, pero solo si nadie la esta usando.
+//
+// Los presupuestos cuentan igual que los movimientos: la consulta de estado
+// cruza presupuestos con categorias y descarta las filas cuya categoria ya no
+// existe, asi que un presupuesto huerfano no daria error, simplemente
+// desapareceria del tablero sin que nadie se entere.
 func (s *Categorias) Eliminar(ctx context.Context, usuarioID, id bson.ObjectID) error {
 	movimientos, err := s.transacciones.ContarPorCategoria(ctx, usuarioID, id)
 	if err != nil {
@@ -114,6 +120,15 @@ func (s *Categorias) Eliminar(ctx context.Context, usuarioID, id bson.ObjectID) 
 	if movimientos > 0 {
 		return errores.Conflicto(errores.CodigoCategoriaConTransacciones,
 			"Esta categoria tiene movimientos registrados. Archivala en lugar de borrarla.")
+	}
+
+	presupuestos, err := s.presupuestos.ContarPorCategoria(ctx, usuarioID, id)
+	if err != nil {
+		return errores.Interno(err)
+	}
+	if presupuestos > 0 {
+		return errores.Conflicto(errores.CodigoCategoriaConPresupuestos,
+			"Esta categoria tiene presupuestos asignados. Borralos primero o archiva la categoria.")
 	}
 
 	if err := s.categorias.Eliminar(ctx, usuarioID, id); err != nil {

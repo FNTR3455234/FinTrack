@@ -42,7 +42,33 @@ El recorrido completo:
 Si el id viniera del cuerpo o de la query, cualquiera podría pedir los datos de otro cambiando un
 valor. Por eso los DTO de entrada **no tienen** un campo `usuario_id`: no hay forma de mandarlo.
 
-_(Pendiente en la fase 4: mostrarlo con el filtro de un repositorio real.)_
+En el repositorio, el paso 4 son dos funciones en `repositorios/comunes.go` por las que pasa toda
+operación de un solo documento:
+
+```go
+func deUsuario(usuarioID bson.ObjectID) bson.M {
+	return bson.M{"usuario_id": usuarioID}
+}
+
+func suyoPorID(usuarioID, id bson.ObjectID) bson.M {
+	return bson.M{"_id": id, "usuario_id": usuarioID}
+}
+```
+
+Por eso editar o borrar algo ajeno responde **404 y no 403**: un 403 confirmaría que el recurso
+existe. Para el intruso, sencillamente no está.
+
+### Los dos puntos donde el cliente elige un identificador
+
+1. **Al crear una transacción** llegan `cuenta_id` y `categoria_id` en el cuerpo.
+   `servicios.validarReferencias` comprueba las dos filtrando por usuario, así que un id ajeno
+   "no existe". Lo mismo hace `Presupuestos.validarCategoria`.
+2. **En las agregaciones de reportes** (fase 5), donde el riesgo es peor porque cruzan colecciones:
+   un `$lookup` al que se le olvide el `usuario_id` sumaría dinero ajeno sin que ningún 403 lo
+   delate. Por eso el `$lookup` con `let` + `pipeline` de
+   `reportes_presupuestos.go` compara `$$usr` además de la categoría, aunque el `$match` inicial ya
+   haya filtrado. Hay una prueba de integración con dos usuarios reales que lo comprueba sobre las
+   cinco agregaciones.
 
 ## Modelo de datos
 

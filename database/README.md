@@ -119,9 +119,15 @@ estados** posibles: uno excedido, dos en alerta y tres en orden.
 
 ## Las dos consultas relacionales
 
-Las dos usan `$lookup` para cruzar colecciones. El backend las ejecuta en
-`/api/v1/reportes/gastos-por-categoria` y `/api/v1/reportes/estado-presupuestos` (fase 5); aquí
-están en su versión de `mongosh` para poder probarlas directamente contra la semilla.
+Las dos usan `$lookup` para cruzar colecciones. Aquí están en su versión de `mongosh`, para poder
+probarlas directamente contra la semilla.
+
+El backend las ejecuta tal cual en `GET /api/v1/reportes/gastos-por-categoria?mes=7&anio=2026` y
+`GET /api/v1/reportes/estado-presupuestos?mes=7&anio=2026`; el código Go está en
+[`backend/internal/repositorios/reportes_gastos.go`](../backend/internal/repositorios/reportes_gastos.go)
+y [`reportes_presupuestos.go`](../backend/internal/repositorios/reportes_presupuestos.go), con las
+mismas etapas y los mismos comentarios. **Las tablas de resultados de abajo son las que devuelve la
+API**, comprobadas contra esta misma semilla.
 
 ### 1. Gastos por categoría
 

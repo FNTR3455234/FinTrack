@@ -259,6 +259,76 @@ justificarlas después. Formato por entrada: **decisión, contexto, alternativas
 
 ---
 
+## 019 — La fecha de un movimiento es un día, anclado a las 12:00 UTC
+
+**Fecha:** 2026-08-02 · **Fase:** 5 · *(resuelve el pendiente "Fase 5 — Zona horaria")*
+
+- **Contexto:** `fecha` llegaba del cliente como un instante y se guardaba tal cual en UTC. Un gasto
+  de las 19:00 del 31 de julio en Ciudad de México (UTC−6) es el 1 de agosto en UTC, así que caía
+  en el presupuesto y en el reporte del mes equivocado.
+- **Alternativas:**
+  1. Fijar todo el backend al huso `America/Mexico_City`. Se descartó: ata la aplicación a un país
+     y rompe en cuanto alguien viaja o el servidor corre en otra región.
+  2. Guardar además el huso del cliente en cada transacción. Se descartó: complica todas las
+     agregaciones para un dato que nadie va a consultar.
+  3. Tratar la fecha como lo que realmente es: un **día del calendario**, no un instante.
+- **Decisión:** `servicios.diaCalendario` toma el año, el mes y el día **en el huso con el que llegó
+  la fecha** (`time.Time.Date()` los devuelve así) y los vuelve a construir como las **12:00 UTC**
+  de ese mismo día. Los rangos de mes (`modelos.Periodo.Rango`) y los `$year`/`$month` de las
+  agregaciones trabajan todos en UTC.
+- **Por qué:** nadie apunta un gasto "a las 19:03:22"; lo apunta el día 31. El ancla a mediodía deja
+  doce horas de margen a cada lado, así que el día se lee igual desde cualquier huso entre UTC−11 y
+  UTC+11. La semilla ya usaba este mismo criterio.
+- **Comprobado en:** `servicios/tiempo_test.go` y una petición real con
+  `fecha: "2026-07-31T19:00:00-06:00"`, que queda guardada como `2026-07-31T12:00:00Z` y cuenta
+  contra el presupuesto de julio.
+
+---
+
+## 020 — El saldo de una cuenta se calcula, no se guarda
+
+**Fecha:** 2026-08-02 · **Fase:** 5 · *(resuelve el pendiente "Fase 5 — Saldo de cuentas")*
+
+- **Contexto:** `cuentas` guarda `saldo_inicial` pero no un saldo actual.
+- **Decisión:** `GET /reportes/saldos` calcula `saldo_inicial + ingresos − gastos` con una
+  agregación que cruza `cuentas` con `transacciones`.
+- **Por qué:** un saldo guardado es una segunda fuente de verdad. Se desincroniza en cuanto una
+  transacción se edita o se borra y algo falla a mitad, y a partir de ahí la aplicación miente sin
+  que nadie pueda notarlo. Calcularlo cuesta una agregación sobre un índice y siempre es correcto.
+- **Contrapartida:** con muchísimos movimientos habría que guardar cortes mensuales. Para el
+  volumen de una app de finanzas personales no aplica.
+
+---
+
+## 021 — Una categoría con presupuestos tampoco se puede borrar
+
+**Fecha:** 2026-08-02 · **Fase:** 5
+
+- **Contexto:** la regla de la fase 4 solo miraba las transacciones.
+- **Decisión:** `DELETE /categorias/:id` responde `409 CATEGORIA_CON_PRESUPUESTOS` si la categoría
+  tiene presupuestos, igual que ya hacía con los movimientos.
+- **Por qué:** la consulta de estado de presupuestos hace `$lookup` a `categorias` seguido de
+  `$unwind`, y `$unwind` **descarta** los documentos cuyo arreglo quedó vacío. Un presupuesto
+  huérfano no daría error: simplemente desaparecería del tablero sin avisar. Es la clase de fallo
+  peor, el que no se nota.
+
+---
+
+## 022 — Un `mes` o un `anio` mal escrito en un reporte se rechaza
+
+**Fecha:** 2026-08-02 · **Fase:** 5
+
+- **Contexto:** los filtros del listado ajustan los valores fuera de rango en vez de rechazarlos
+  (página 0 pasa a 1). La primera versión de `periodoDeLaConsulta` reutilizó ese criterio y una
+  prueba lo cazó: `mes=abc` se colaba como el mes actual.
+- **Decisión:** en `/reportes` y `/presupuestos`, si `mes` o `anio` vienen y no son un número
+  válido, se responde `400 PERIODO_INVALIDO`. Si no vienen, se usa el mes en curso.
+- **Por qué:** un listado con un filtro raro devuelve menos filas y se nota. Un reporte del mes 13
+  devolvería ceros, y "no gastaste nada" es una respuesta creíble y falsa. Cuando el error es
+  invisible, hay que rechazarlo.
+
+---
+
 ## Pendientes anotados (se resuelven en su fase)
 
 - **Fase 3 — Refresh token sin estado:** el refresh token no se guarda en la base, así que se puede
@@ -269,7 +339,9 @@ justificarlas después. Formato por entrada: **decisión, contexto, alternativas
   debe validar que `transaccion.tipo == categoria.tipo`.
 - **Fase 4 — Borrado de cuentas y categorías:** si tienen transacciones asociadas, `DELETE`
   responde `409` y el cliente debe archivar (`archivada: true`) en lugar de borrar. Sin cascada.
-- **Fase 5 — Zona horaria:** las fechas se guardan en UTC. Decidir si los rangos de mes se calculan
-  en UTC o en `America/Mexico_City` (afecta a las transacciones de fin de mes por la noche).
-- **Fase 5 — Saldo de cuentas:** no se guarda un saldo actual, solo `saldo_inicial`; el saldo se
-  calcula agregando transacciones para no tener dos fuentes de verdad.
+- ~~**Fase 5 — Zona horaria**~~ → resuelto en la [decisión 019](#019--la-fecha-de-un-movimiento-es-un-día-anclado-a-las-1200-utc).
+- ~~**Fase 5 — Saldo de cuentas**~~ → resuelto en la [decisión 020](#020--el-saldo-de-una-cuenta-se-calcula-no-se-guarda).
+- **Fase 6 — Alertas solo al crear:** `POST /transacciones` avisa si el gasto rebasa el presupuesto,
+  pero `PUT` no. Editar el monto de un gasto también puede cruzar el umbral. Se decidirá si el
+  aviso se extiende a la edición o si el frontend consulta `/reportes/estado-presupuestos` al
+  guardar.

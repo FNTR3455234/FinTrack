@@ -34,6 +34,8 @@ const (
 	// Reglas de negocio (fases 4 y 5)
 	CodigoCuentaConTransacciones    = "CUENTA_CON_TRANSACCIONES"
 	CodigoCategoriaConTransacciones = "CATEGORIA_CON_TRANSACCIONES"
+	CodigoCategoriaConPresupuestos  = "CATEGORIA_CON_PRESUPUESTOS"
 	CodigoPresupuestoDuplicado      = "PRESUPUESTO_DUPLICADO"
 	CodigoTipoNoCoincide            = "TIPO_NO_COINCIDE"
+	CodigoPeriodoInvalido           = "PERIODO_INVALIDO"
 )

@@ -28,6 +28,20 @@ type Transaccion struct {
 	ActualizadoEn time.Time     `bson:"actualizado_en"  json:"actualizado_en"`
 }
 
+// TransaccionCreada es lo que devuelve POST /transacciones: la transaccion mas
+// la alerta de presupuesto, si el gasto dejo su categoria cerca del limite.
+//
+// Transaccion va incrustada sin nombre a proposito: al serializar, sus campos
+// salen al mismo nivel que siempre y solo se suma "alerta". Asi un cliente de
+// la fase 4 sigue leyendo la respuesta sin cambiar nada.
+//
+// Alerta lleva omitempty: cuando no hay presupuesto, o cuando el gasto todavia
+// va holgado, el campo ni aparece.
+type TransaccionCreada struct {
+	Transaccion
+	Alerta *AlertaPresupuesto `json:"alerta,omitempty"`
+}
+
 // PeticionTransaccion es el cuerpo de POST y PUT /transacciones.
 //
 // Los identificadores llegan como cadena hexadecimal de 24 caracteres, que es

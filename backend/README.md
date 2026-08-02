@@ -140,6 +140,12 @@ texto del mensaje. El catálogo completo está en
 | 🔒 | `/api/v1/cuentas`, `/api/v1/cuentas/:id` | CRUD de cuentas |
 | 🔒 | `/api/v1/categorias`, `/api/v1/categorias/:id` | CRUD de categorías |
 | 🔒 | `/api/v1/transacciones`, `/api/v1/transacciones/:id` | CRUD de transacciones con filtros y paginación |
+| 🔒 | `/api/v1/presupuestos`, `/api/v1/presupuestos/:id` | CRUD de presupuestos mensuales |
+| 🔒 GET | `/api/v1/reportes/gastos-por-categoria` | **Consulta relacional 1**: en qué se fue el dinero |
+| 🔒 GET | `/api/v1/reportes/estado-presupuestos` | **Consulta relacional 2**: presupuestado contra gastado |
+| 🔒 GET | `/api/v1/reportes/resumen` | Cifras del mes para el tablero |
+| 🔒 GET | `/api/v1/reportes/tendencia` | Serie mensual de ingresos y gastos |
+| 🔒 GET | `/api/v1/reportes/saldos` | Saldo actual de cada cuenta |
 
 El resto de los endpoints llega en las fases 5 y 6.
 
@@ -305,11 +311,134 @@ un listado que no es el que se pidió.
 El texto de `busqueda` se escapa antes de armar la expresión regular, así que buscar `.*` no
 recorre toda la colección.
 
+#### La fecha es un día, no un instante
+
+El `fecha` que llega se guarda como las **12:00 UTC del día que eligió el usuario**, leyendo el día
+en el huso con el que vino. Un gasto enviado como `2026-07-31T19:00:00-06:00` queda guardado como
+`2026-07-31T12:00:00Z` y cuenta contra julio, no contra agosto. Nadie apunta un gasto "a las
+19:03:22": lo apunta el día 31 ([decisión 019](../docs/decisiones.md)).
+
 ### Borrado
 
 `DELETE` de una cuenta o categoría **con movimientos** responde `409`
-(`CUENTA_CON_TRANSACCIONES` / `CATEGORIA_CON_TRANSACCIONES`). No hay borrado en cascada: perder
-los movimientos por equivocación no tiene vuelta atrás. Para eso existe `archivada`.
+(`CUENTA_CON_TRANSACCIONES` / `CATEGORIA_CON_TRANSACCIONES`). Una categoría **con presupuestos**
+responde `409 CATEGORIA_CON_PRESUPUESTOS`. No hay borrado en cascada: perder los movimientos por
+equivocación no tiene vuelta atrás. Para eso existe `archivada`.
+
+## Presupuestos
+
+Un presupuesto es el techo de gasto que el usuario se pone en una categoría para un mes concreto.
+
+```bash
+curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"categoria_id":"...","monto_limite":4000,"mes":7,"anio":2026}' \
+  http://localhost:8080/api/v1/presupuestos
+```
+
+| Campo | Reglas |
+|---|---|
+| `categoria_id` | ObjectID de una categoría **de gasto** del usuario |
+| `monto_limite` | mayor que 0 |
+| `mes` | 1 a 12 |
+| `anio` | 2000 a 2100 |
+
+`mes` y `anio` se guardan como enteros y no como fecha: el presupuesto es del periodo entero, no
+de un instante.
+
+- **Solo se presupuestan gastos** (`400 TIPO_NO_COINCIDE`): ponerle un techo a un ingreso no
+  significa nada, y la consulta de estado solo suma transacciones de tipo `gasto`.
+- **Uno por categoría y mes** (`409 PRESUPUESTO_DUPLICADO`). Lo decide el índice único
+  `(usuario_id, categoria_id, mes, anio)`, no una consulta previa: entre la consulta y el insert
+  cabe otra petición.
+- `GET /presupuestos?mes=7&anio=2026` filtra por periodo; sin esos parámetros los devuelve todos.
+
+### Alertas al registrar un gasto
+
+`POST /transacciones` responde la transacción de siempre y, si el gasto deja su categoría en el
+**80 % o más** de su presupuesto del mes, añade un campo `alerta`:
+
+```json
+{
+  "datos": {
+    "id": "...", "tipo": "gasto", "monto": 250.75, "fecha": "2026-07-22T12:00:00Z",
+    "alerta": {
+      "nombre": "Supermercado",
+      "monto_limite": 4000, "gastado": 4368.85, "disponible": -368.85,
+      "porcentaje_usado": 109.22, "estado": "excedido",
+      "mensaje": "Te pasaste del presupuesto de Supermercado: llevas 4368.85 de 4000.00 (109.22%), 368.85 de mas."
+    }
+  }
+}
+```
+
+El campo lleva `omitempty`: si no hay presupuesto, si el movimiento es un ingreso o si el gasto
+todavía va holgado, ni aparece. La transacción se serializa igual que antes, así que un cliente de
+la fase 4 sigue funcionando sin cambios.
+
+Dos detalles del diseño:
+
+- La alerta se calcula **después** de guardar, para que el total ya incluya el movimiento que el
+  usuario acaba de capturar.
+- Un fallo al calcularla **no tumba la petición**: la transacción ya está guardada y responder
+  `500` haría creer que no se registró. Se anota en la bitácora y se responde sin alerta.
+
+El semáforo lo resuelve la misma agregación que alimenta `/reportes/estado-presupuestos`, así que
+la alerta y el tablero no pueden decir cosas distintas del mismo presupuesto.
+
+## Reportes
+
+Cinco consultas de solo lectura, todas bajo `/api/v1/reportes`. Aceptan `?mes=` y `?anio=`; sin
+ellos usan el mes en curso. Un periodo imposible o mal escrito responde `400 PERIODO_INVALIDO` en
+vez de devolver ceros, que se leerían como "no gastaste nada".
+
+| Endpoint | Qué responde | Colecciones que cruza |
+|---|---|---|
+| `gastos-por-categoria` | Total, número de movimientos y % de cada categoría | `transacciones` → `categorias` |
+| `estado-presupuestos` | Presupuestado, gastado, disponible y semáforo | `presupuestos` → `categorias` + `transacciones` |
+| `resumen` | Ingresos, gastos, balance, saldo total y conteo del semáforo | las tres anteriores |
+| `tendencia` | Serie mensual (`?meses=`, 1 a 24, por defecto 6) | `transacciones` |
+| `saldos` | Saldo actual de cada cuenta | `cuentas` → `transacciones` |
+
+Las dos primeras son **las consultas relacionales de la entrega**. Su objetivo está documentado
+como comentario en `repositorios/reportes_gastos.go` y `repositorios/reportes_presupuestos.go`, y
+su versión de `mongosh` con resultados reales en [`database/README.md`](../database/README.md).
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" \
+  "http://localhost:8080/api/v1/reportes/gastos-por-categoria?mes=7&anio=2026"
+```
+
+Contra los datos semilla (julio de 2026):
+
+| Categoría | Total | Movimientos | % del gasto |
+|---|---|---|---|
+| Renta | 9 500.00 | 1 | 46.77 % |
+| Supermercado | 4 118.10 | 4 | 20.28 % |
+| Servicios | 1 680.20 | 3 | 8.27 % |
+| … | | | |
+
+### El semáforo
+
+| Estado | Cuándo |
+|---|---|
+| `ok` | menos del 80 % del límite |
+| `alerta` | del 80 % al 100 % |
+| `excedido` | más del 100 % |
+
+Los umbrales viven en `modelos/reportes.go` y los aplica el `$switch` de la agregación, para que el
+valor del código y el de la consulta no se puedan separar sin que se note.
+
+### Tendencia
+
+Los meses sin ningún movimiento **también salen, con ceros**. MongoDB solo agrupa lo que existe, así
+que los huecos los rellena el servicio: una gráfica de barras a la que le faltan meses miente sobre
+la forma de la serie.
+
+### Saldos
+
+`saldo_inicial + ingresos − gastos`, calculado, nunca guardado. Un saldo almacenado sería una
+segunda fuente de verdad que se desincroniza en cuanto una transacción se edita o se borra
+([decisión 020](../docs/decisiones.md)).
 
 ## Autenticación
 
@@ -403,9 +532,14 @@ Hay dos clases de prueba:
   desarrollo.
 
 Las de `internal/rutas` levantan la **API completa contra MongoDB de verdad** —router,
-middlewares, handlers, servicios y repositorios, sin ningún doble— y cubren el CRUD de los tres
-recursos, los filtros, la paginación y la comprobación de que **dos usuarios nunca ven ni tocan
-los datos del otro**.
+middlewares, handlers, servicios y repositorios, sin ningún doble— y cubren el CRUD de los cuatro
+recursos, los filtros, la paginación, las cinco agregaciones y la comprobación de que **dos
+usuarios nunca ven ni tocan los datos del otro**.
+
+Las dos consultas relacionales se prueban contra un juego de datos chico y conocido, montado por la
+propia prueba, en el que cada cifra que se afirma se puede sumar a mano: los tres estados del
+semáforo, los porcentajes, el mes de al lado que no debe colarse y un presupuesto sin gastos que
+tiene que aparecer en cero.
 
 Para correr solo esas:
 
@@ -415,17 +549,20 @@ MONGO_URI_PRUEBAS="mongodb://fintrack_admin:fintrack_dev_2026@localhost:27017/?a
   go test ./internal/rutas/... -v
 ```
 
-**Cobertura total: 83.2 %** (`go tool cover -func=coverage.out`). Por paquete, con las pruebas
-de integración corriendo:
+**Cobertura total: 83.7 %**, con las pruebas de integración corriendo:
 
 | Paquete | Cobertura |
 |---|---|
 | `internal/errores` · `internal/respuestas` · `internal/rutas` | 100 % |
 | `internal/middleware` | 99.0 % |
 | `internal/config` | 93.5 % |
+| `internal/modelos` | 90.9 % |
 | `internal/db` | 90.0 % |
-| `internal/servicios` | 85.6 % |
+| `internal/servicios` | 89.4 % |
+| `internal/repositorios` | 85.8 % |
+| `internal/handlers` | 79.3 % |
 
-`internal/handlers` y `internal/repositorios` dan un número bajo medidos por separado porque casi
-todo su código lo ejercitan las pruebas de `internal/rutas`; por eso el total se mide con
-`-coverpkg=./...`, que sí cuenta esa cobertura cruzada.
+Medidos con `-coverpkg=./...`. Sin esa bandera, `handlers` y `repositorios` darían un número mucho
+más bajo: casi todo su código lo ejercitan las pruebas de `internal/rutas`, y por defecto Go solo
+cuenta la cobertura que produce el paquete que se está probando. Lo que baja de `cmd/api` (0 %) es
+el cableado y el apagado ordenado, que se comprueban a mano mandando una señal real al binario.

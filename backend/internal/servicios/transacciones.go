@@ -37,15 +37,21 @@ type Transacciones struct {
 	transacciones RepositorioTransacciones
 	cuentas       ComprobadorCuenta
 	categorias    BuscadorCategoria
+	presupuestos  EvaluadorPresupuesto
 }
 
 // NuevoTransacciones arma el servicio con sus dependencias.
-func NuevoTransacciones(t RepositorioTransacciones, c ComprobadorCuenta, cat BuscadorCategoria) *Transacciones {
-	return &Transacciones{transacciones: t, cuentas: c, categorias: cat}
+func NuevoTransacciones(t RepositorioTransacciones, c ComprobadorCuenta, cat BuscadorCategoria, p EvaluadorPresupuesto) *Transacciones {
+	return &Transacciones{transacciones: t, cuentas: c, categorias: cat, presupuestos: p}
 }
 
-// Crear registra un movimiento.
-func (s *Transacciones) Crear(ctx context.Context, usuarioID bson.ObjectID, p modelos.PeticionTransaccion) (*modelos.Transaccion, error) {
+// Crear registra un movimiento y, si es un gasto, revisa el presupuesto de su
+// categoria para avisar cuando queda cerca del limite o por encima.
+//
+// La alerta se calcula DESPUES de guardar, a proposito: asi el total que
+// reporta ya incluye el movimiento que el usuario acaba de capturar, que es lo
+// que espera ver.
+func (s *Transacciones) Crear(ctx context.Context, usuarioID bson.ObjectID, p modelos.PeticionTransaccion) (*modelos.TransaccionCreada, error) {
 	cuentaID, categoriaID, err := s.validarReferencias(ctx, usuarioID, p)
 	if err != nil {
 		return nil, err
@@ -59,7 +65,7 @@ func (s *Transacciones) Crear(ctx context.Context, usuarioID bson.ObjectID, p mo
 		Tipo:          p.Tipo,
 		Monto:         redondear(p.Monto),
 		Descripcion:   strings.TrimSpace(p.Descripcion),
-		Fecha:         enUTC(p.Fecha),
+		Fecha:         diaCalendario(p.Fecha),
 		Notas:         notasONulo(p.Notas),
 		CreadoEn:      momento,
 		ActualizadoEn: momento,
@@ -68,7 +74,11 @@ func (s *Transacciones) Crear(ctx context.Context, usuarioID bson.ObjectID, p mo
 	if err := s.transacciones.Crear(ctx, transaccion); err != nil {
 		return nil, errores.Interno(err)
 	}
-	return transaccion, nil
+
+	return &modelos.TransaccionCreada{
+		Transaccion: *transaccion,
+		Alerta:      s.alertaDe(ctx, usuarioID, transaccion),
+	}, nil
 }
 
 // Listar devuelve una pagina de transacciones y el total del filtro.
@@ -102,7 +112,7 @@ func (s *Transacciones) Actualizar(ctx context.Context, usuarioID, id bson.Objec
 		Tipo:          p.Tipo,
 		Monto:         redondear(p.Monto),
 		Descripcion:   strings.TrimSpace(p.Descripcion),
-		Fecha:         enUTC(p.Fecha),
+		Fecha:         diaCalendario(p.Fecha),
 		Notas:         notasONulo(p.Notas),
 		ActualizadoEn: ahora(),
 	})

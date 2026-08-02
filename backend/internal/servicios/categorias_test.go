@@ -13,9 +13,18 @@ import (
 )
 
 func servicioCategorias() (*Categorias, *categoriasFalso, *transaccionesFalso) {
+	servicio, categorias, transacciones, _ := servicioCategoriasCompleto()
+	return servicio, categorias, transacciones
+}
+
+// servicioCategoriasCompleto tambien devuelve el repositorio de presupuestos,
+// para las pruebas que necesitan una categoria presupuestada.
+func servicioCategoriasCompleto() (*Categorias, *categoriasFalso, *transaccionesFalso, *presupuestosFalso) {
 	repoCategorias := nuevoCategoriasFalso()
 	repoTransacciones := nuevoTransaccionesFalso()
-	return NuevoCategorias(repoCategorias, repoTransacciones), repoCategorias, repoTransacciones
+	repoPresupuestos := nuevoPresupuestosFalso()
+	servicio := NuevoCategorias(repoCategorias, repoTransacciones, repoPresupuestos)
+	return servicio, repoCategorias, repoTransacciones, repoPresupuestos
 }
 
 func peticionCategoria(nombre, tipo string) modelos.PeticionCategoria {
@@ -141,6 +150,27 @@ func TestCategoriasEliminar_SeNiegaSiTieneMovimientos(t *testing.T) {
 	dominio, ok := fintrackErrores.Como(err)
 	require.True(t, ok)
 	assert.Equal(t, fintrackErrores.CodigoCategoriaConTransacciones, dominio.Codigo)
+}
+
+func TestCategoriasEliminar_SeNiegaSiTienePresupuestos(t *testing.T) {
+	servicio, _, _, repoPresupuestos := servicioCategoriasCompleto()
+	usuarioID := bson.NewObjectID()
+	categoria, err := servicio.Crear(context.Background(), usuarioID, peticionCategoria("Super", modelos.TipoGasto))
+	require.NoError(t, err)
+
+	// Sin movimientos, pero presupuestada. Si se dejara borrar, el presupuesto
+	// quedaria huerfano: la consulta de estado lo descartaria al no encontrar su
+	// categoria y desapareceria del tablero sin avisar.
+	require.NoError(t, repoPresupuestos.Crear(context.Background(), &modelos.Presupuesto{
+		UsuarioID: usuarioID, CategoriaID: categoria.ID, MontoLimite: 4000, Mes: 7, Anio: 2026,
+	}))
+
+	err = servicio.Eliminar(context.Background(), usuarioID, categoria.ID)
+
+	dominio, ok := fintrackErrores.Como(err)
+	require.True(t, ok)
+	assert.Equal(t, fintrackErrores.CodigoCategoriaConPresupuestos, dominio.Codigo)
+	assert.Equal(t, 409, dominio.HTTP)
 }
 
 func TestCategoriasEliminar_BorraLaCategoriaSinMovimientos(t *testing.T) {

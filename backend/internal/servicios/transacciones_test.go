@@ -19,6 +19,8 @@ type escenario struct {
 	repoTransacciones *transaccionesFalso
 	repoCuentas       *cuentasFalso
 	repoCategorias    *categoriasFalso
+	repoPresupuestos  *presupuestosFalso
+	evaluador         *evaluadorFalso
 	usuarioID         bson.ObjectID
 	cuentaID          bson.ObjectID
 	categoriaGasto    bson.ObjectID
@@ -31,6 +33,8 @@ func nuevoEscenario(t *testing.T) escenario {
 	repoTransacciones := nuevoTransaccionesFalso()
 	repoCuentas := nuevoCuentasFalso()
 	repoCategorias := nuevoCategoriasFalso()
+	repoPresupuestos := nuevoPresupuestosFalso()
+	evaluador := nuevoEvaluadorFalso(repoPresupuestos, repoTransacciones, repoCategorias)
 	usuarioID := bson.NewObjectID()
 
 	cuenta := &modelos.Cuenta{UsuarioID: usuarioID, Nombre: "BBVA Debito", Tipo: modelos.CuentaDebito}
@@ -43,10 +47,12 @@ func nuevoEscenario(t *testing.T) escenario {
 	require.NoError(t, repoCategorias.Crear(context.Background(), ingreso))
 
 	return escenario{
-		servicio:          NuevoTransacciones(repoTransacciones, repoCuentas, repoCategorias),
+		servicio:          NuevoTransacciones(repoTransacciones, repoCuentas, repoCategorias, evaluador),
 		repoTransacciones: repoTransacciones,
 		repoCuentas:       repoCuentas,
 		repoCategorias:    repoCategorias,
+		repoPresupuestos:  repoPresupuestos,
+		evaluador:         evaluador,
 		usuarioID:         usuarioID,
 		cuentaID:          cuenta.ID,
 		categoriaGasto:    gasto.ID,

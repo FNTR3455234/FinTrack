@@ -67,6 +67,8 @@ func routerReal(t *testing.T) *api {
 	repoCuentas := repositorios.NuevoCuentas(conexion.BD)
 	repoCategorias := repositorios.NuevoCategorias(conexion.BD)
 	repoTransacciones := repositorios.NuevoTransacciones(conexion.BD)
+	repoPresupuestos := repositorios.NuevoPresupuestos(conexion.BD)
+	repoReportes := repositorios.NuevoReportes(conexion.BD)
 
 	cfg := &config.Config{GinModo: gin.TestMode, CORSOrigenes: []string{"http://localhost:5173"}}
 	router := Configurar(cfg, Dependencias{
@@ -74,8 +76,10 @@ func routerReal(t *testing.T) *api {
 		Auth:          servicios.NuevoAuth(repositorios.NuevoUsuarios(conexion.BD), tokens),
 		Validador:     tokens,
 		Cuentas:       servicios.NuevoCuentas(repoCuentas, repoTransacciones),
-		Categorias:    servicios.NuevoCategorias(repoCategorias, repoTransacciones),
-		Transacciones: servicios.NuevoTransacciones(repoTransacciones, repoCuentas, repoCategorias),
+		Categorias:    servicios.NuevoCategorias(repoCategorias, repoTransacciones, repoPresupuestos),
+		Transacciones: servicios.NuevoTransacciones(repoTransacciones, repoCuentas, repoCategorias, repoReportes),
+		Presupuestos:  servicios.NuevoPresupuestos(repoPresupuestos, repoCategorias),
+		Reportes:      servicios.NuevoReportes(repoReportes),
 	})
 
 	return &api{router: router, t: t}
