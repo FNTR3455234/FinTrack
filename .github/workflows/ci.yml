@@ -1,0 +1,193 @@
+# Integracion continua de FinTrack.
+#
+# Cuatro trabajos, del mas rapido al mas lento, y todos en paralelo salvo el
+# ultimo: si algo se rompe, lo normal es enterarse en el primero.
+#
+#   backend    formato, analisis estatico y pruebas contra un MongoDB de verdad
+#   frontend   compilacion del bundle
+#   imagenes   que los dos Dockerfile construyen
+#   contrato   levanta el stack completo y le pasa la coleccion de Postman
+#
+# El de contrato depende de los otros tres a proposito: tarda varios minutos y
+# no tiene sentido gastarlos si las pruebas unitarias ya fallaron.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  # Permite lanzarlo a mano desde la pestaña Actions.
+  workflow_dispatch:
+
+# Si se empuja dos veces seguidas a la misma rama, la ejecucion anterior se
+# cancela: nadie mira el resultado de un commit que ya quedo atras.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (formato, vet y pruebas)
+    runs-on: ubuntu-latest
+
+    # MongoDB de verdad, no un doble: las pruebas de integracion comprueban
+    # agregaciones, indices unicos y el $jsonSchema, y eso un doble no lo puede
+    # imitar sin acabar imitando los errores tambien.
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        env:
+          MONGO_INITDB_ROOT_USERNAME: fintrack_admin
+          MONGO_INITDB_ROOT_PASSWORD: fintrack_ci_2026
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.runCommand({ping:1}).ok'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          # La version sale de go.mod: un sitio menos que actualizar a mano.
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+
+      - name: Comprobar el formato
+        working-directory: backend
+        # gofmt -l lista los archivos mal formateados. Si lista alguno, el
+        # comando falla y ademas dice cuales son.
+        run: |
+          sin_formato=$(gofmt -l ./cmd ./internal)
+          if [ -n "$sin_formato" ]; then
+            echo "Estos archivos no estan formateados:"
+            echo "$sin_formato"
+            exit 1
+          fi
+
+      - name: Analisis estatico
+        working-directory: backend
+        run: go vet ./...
+
+      - name: Pruebas con cobertura
+        working-directory: backend
+        env:
+          # Sin esta variable las pruebas de integracion se saltan solas. Aqui
+          # se pone justamente para que NO se salten.
+          MONGO_URI_PRUEBAS: mongodb://fintrack_admin:fintrack_ci_2026@localhost:27017/?authSource=admin
+        run: go test ./... -coverpkg=./cmd/...,./internal/... -coverprofile=coverage.out
+
+      - name: Resumen de cobertura
+        working-directory: backend
+        run: |
+          go tool cover -func=coverage.out | tail -1
+          # El resumen aparece en la portada de la ejecucion, sin tener que
+          # abrir la bitacora entera.
+          echo "### Cobertura del backend" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          go tool cover -func=coverage.out | tail -1 >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+  frontend:
+    name: Frontend (compilacion)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      # npm ci y no npm install: instala exactamente lo del package-lock.json y
+      # falla si el lock no cuadra con el package.json.
+      - name: Instalar dependencias
+        working-directory: frontend
+        run: npm ci --no-audit --no-fund
+
+      - name: Compilar
+        working-directory: frontend
+        run: npm run build
+
+      - name: Tamaño del bundle
+        working-directory: frontend
+        run: |
+          echo "### Tamaño del bundle" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          du -h dist/assets/*.js dist/assets/*.css | sort -h >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+  imagenes:
+    name: Imagenes de Docker
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      # Se construyen pero no se publican: no hay registro configurado todavia.
+      # Lo que se comprueba aqui es que los dos Dockerfile siguen siendo validos.
+      - name: Construir la imagen del backend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: false
+          build-args: VERSION=${{ github.sha }}
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,mode=max,scope=api
+
+      - name: Construir la imagen del frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: false
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web
+
+  contrato:
+    name: Contrato de la API (stack completo + Postman)
+    runs-on: ubuntu-latest
+    needs: [backend, frontend, imagenes]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # El stack no arranca con los secretos de ejemplo: la configuracion los
+      # rechaza en modo release. Aqui se generan al vuelo, igual que hace
+      # `make env` en local.
+      - name: Preparar el .env
+        run: |
+          sed -e "s|^MONGO_PASSWORD=.*|MONGO_PASSWORD=$(openssl rand -hex 16)|" \
+              -e "s|^JWT_SECRETO_ACCESO=.*|JWT_SECRETO_ACCESO=$(openssl rand -hex 32)|" \
+              -e "s|^JWT_SECRETO_REFRESCO=.*|JWT_SECRETO_REFRESCO=$(openssl rand -hex 32)|" \
+              .env.example > .env
+
+      - name: Levantar el stack
+        run: docker compose up --build -d --wait --wait-timeout 180
+
+      # --wait ya espera a que los healthcheck pasen, asi que si llegamos aqui
+      # los tres servicios estan sanos. Se deja constancia igualmente.
+      - name: Estado de los servicios
+        run: |
+          docker compose ps
+          curl -sf http://localhost:8080/api/v1/health
+
+      - name: Coleccion de Postman
+        run: npx --yes newman run postman/FinTrack.postman_collection.json -e postman/FinTrack.postman_environment.json
+
+      # Si algo falla, la bitacora de los contenedores es lo unico que explica
+      # por que. if: failure() hace que solo aparezca cuando hace falta.
+      - name: Bitacora de los contenedores (solo si algo fallo)
+        if: failure()
+        run: docker compose logs --no-color
+
+      - name: Apagar el stack
+        if: always()
+        run: docker compose down -v

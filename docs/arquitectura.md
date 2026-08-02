@@ -1,12 +1,69 @@
 # Arquitectura de FinTrack
 
-> Documento en construcción. Se completa en la **fase 8**, cuando ya existan todas las piezas.
-> Aquí queda el esqueleto para ir llenándolo conforme avanzan las fases.
-
 ## Vista general
 
-_(Pendiente: diagrama de los tres contenedores — MongoDB, API en Go, frontend servido por nginx —
-y cómo se hablan entre sí.)_
+Tres contenedores en una red privada de Docker. **Solo uno publica un puerto.**
+
+```mermaid
+flowchart LR
+    N["🌐 Navegador"]
+
+    subgraph red["red interna de Docker (fintrack-prod_interna)"]
+        direction LR
+        W["<b>web</b><br/>nginx 1.27-alpine<br/>bundle de React<br/>:8080"]
+        A["<b>api</b><br/>Go 1.25 · Gin<br/>binario estático<br/>:8080"]
+        M[("<b>mongo</b><br/>MongoDB 7<br/>:27017")]
+    end
+
+    V[["volumen<br/>mongo_datos"]]
+
+    N -->|"http://localhost:8080"| W
+    W -->|"/ · /assets/*<br/>archivos estáticos"| W
+    W -->|"/api/* · /swagger<br/>proxy_pass"| A
+    A -->|"driver oficial<br/>mongo-driver/v2"| M
+    M --- V
+```
+
+Lo que hay detrás de ese dibujo:
+
+- **Un solo puerto publicado.** `mongo` y `api` no exponen nada a la máquina anfitriona. Para
+  llegar a ellos hay que estar dentro de la red o entrar con `docker compose exec`. Una base de
+  datos con el 27017 abierto al mundo es de las formas más comunes de filtrar datos.
+- **Un solo origen para el navegador.** nginx sirve el frontend y además pasa `/api` a la API, así
+  que el navegador nunca ve dos dominios: no hay CORS de por medio y `VITE_API_BASE=/api/v1` vale
+  igual en desarrollo (proxy de Vite) que en producción (proxy de nginx).
+- **El estado vive en un solo sitio.** `api` y `web` son desechables: se pueden borrar y volver a
+  crear sin perder nada. Todo lo que persiste está en el volumen `mongo_datos`.
+- **Arranque por orden de salud.** `api` no arranca hasta que Mongo responde al `ping`, y `web` no
+  arranca hasta que `/api/v1/health` responde. Sin eso la API arrancaría primero, no conectaría y
+  se apagaría (`main.go` hace `os.Exit(1)` si la conexión falla).
+
+### Las dos imágenes
+
+Las dos son multi-etapa: una etapa compila y la otra solo ejecuta. Lo que se manda a un servidor
+es superficie de ataque, y ni el compilador ni el código fuente hacen falta para ejecutar.
+
+| Imagen | Compila con | Ejecuta sobre | Tamaño | Usuario |
+|---|---|---|---|---|
+| `fintrack-api` | `golang:1.25-alpine` | `alpine:3.21` | ~64 MB | `fintrack` (uid 10001) |
+| `fintrack-web` | `node:22-alpine` | `nginx:1.27-alpine` | ~83 MB | `nginx` |
+
+El binario de Go se compila con `CGO_ENABLED=0`, así que es estático y no depende de la libc del
+sistema; de Alpine solo se usan los certificados y `wget` para el *healthcheck*. La versión se
+graba al compilar con `-ldflags`, así que `/api/v1/health` dice qué versión está desplegada.
+
+### Los dos stacks de Compose
+
+| Archivo | Proyecto | Qué levanta | Para qué |
+|---|---|---|---|
+| `docker-compose.dev.yml` | `fintrack-dev` | Solo MongoDB | Desarrollo: la API y el frontend corren a mano, con recarga en caliente |
+| `docker-compose.yml` | `fintrack-prod` | Los tres servicios | La entrega: `docker compose up` y listo |
+
+Los nombres de proyecto son **explícitos y distintos** a propósito. Sin ellos Compose usa el nombre
+de la carpeta, que es el mismo para los dos archivos, y los dos stacks acaban compartiendo el
+volumen `mongo_datos`. Como la imagen de Mongo solo crea el usuario administrador la primera vez,
+con el directorio de datos vacío, el segundo stack se encuentra un volumen que ya trae el usuario
+del primero y **no puede autenticarse nunca**. Ver la [decisión 033](decisiones.md).
 
 ## Capas del backend
 
@@ -103,7 +160,56 @@ Dos tokens firmados con secretos distintos: el de **acceso** (15 min) acompaña 
 de **refresco** (7 días) solo sirve para pedir uno de acceso nuevo. El detalle está en
 [`../backend/README.md`](../backend/README.md#autenticación).
 
-_(Pendiente en la fase 7: el reintento del interceptor de axios ante un 401.)_
+El recorrido completo, incluido lo que pasa cuando el token caduca a mitad de una sesión:
+
+```mermaid
+sequenceDiagram
+    participant N as Navegador
+    participant X as interceptor<br/>(api/cliente.js)
+    participant A as API
+    participant M as MongoDB
+
+    N->>A: POST /auth/login
+    A->>M: buscar por email
+    M-->>A: usuario + hash
+    A->>A: bcrypt.CompareHashAndPassword
+    A-->>N: token_acceso (15 min) + token_refresco (7 días)
+
+    Note over N,X: 15 minutos después…
+
+    N->>X: GET /transacciones
+    X->>A: + Authorization: Bearer <acceso>
+    A-->>X: 401 TOKEN_VENCIDO
+
+    rect rgb(240, 245, 250)
+        Note over X: un solo reintento, marcado en la propia petición
+        X->>A: POST /auth/refresh { token_refresco }
+        A-->>X: token_acceso nuevo
+        X->>A: reintenta GET /transacciones
+        A->>M: filtro { usuario_id: <del token> }
+        M-->>A: solo los suyos
+        A-->>N: 200
+    end
+```
+
+Si el refresco también falla, el interceptor borra la sesión y avisa a `AuthContexto`, que es quien
+lleva al usuario al login. El cliente de axios no conoce react-router: solo avisa.
+
+## Integración continua
+
+`.github/workflows/ci.yml`, en cada `push` a `main` y en cada pull request:
+
+| Trabajo | Qué comprueba |
+|---|---|
+| `backend` | `gofmt`, `go vet` y las pruebas **contra un MongoDB de verdad**, con cobertura |
+| `frontend` | Que el bundle compila, y publica su tamaño en el resumen |
+| `imagenes` | Que los dos `Dockerfile` construyen |
+| `contrato` | Levanta el **stack completo** con Compose y le pasa la colección de Postman |
+
+Los tres primeros van en paralelo; `contrato` espera a que pasen, porque tarda minutos y no tiene
+sentido gastarlos si las pruebas unitarias ya fallaron. Las pruebas de integración usan un MongoDB
+real y no un doble: comprueban agregaciones, índices únicos y el `$jsonSchema`, y eso un doble no
+lo puede imitar sin acabar imitando también los errores.
 
 ## Decisiones
 

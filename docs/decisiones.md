@@ -511,6 +511,75 @@ justificarlas después. Formato por entrada: **decisión, contexto, alternativas
 
 ---
 
+## 033 — Cada stack de Compose tiene su propio nombre de proyecto
+
+**Fecha:** 2026-08-02 · **Fase:** 8
+
+- **Contexto:** al levantar por primera vez `docker-compose.yml`, la API entró en un bucle de
+  reinicios con `AuthenticationFailed` contra MongoDB, con una contraseña recién generada y
+  correcta en las dos partes.
+- **Hallazgo:** Compose nombra el proyecto con el nombre de la carpeta si no se le dice otra cosa,
+  y las dos carpetas son la misma. Los dos stacks compartían el volumen `mongo_datos`. La imagen de
+  Mongo **solo crea el usuario administrador la primera vez**, cuando el directorio de datos está
+  vacío: el stack nuevo se encontró un volumen que ya traía el usuario de desarrollo y su
+  `MONGO_INITDB_ROOT_PASSWORD` se ignoró en silencio.
+- **Decisión:** `name: fintrack-dev` y `name: fintrack-prod`, explícitos en cada archivo. Cada
+  stack tiene su volumen y su red.
+- **Por qué queda anotado:** el síntoma (credenciales incorrectas) no apunta para nada a la causa
+  (dos stacks compartiendo volumen). Y la variante peligrosa de este mismo error es la contraria:
+  levantar el stack de producción sobre el volumen de desarrollo y creer que los datos que se ven
+  son los de producción.
+
+---
+
+## 034 — Las cabeceras de seguridad se incluyen en cada `location`, no solo en el `server`
+
+**Fecha:** 2026-08-02 · **Fase:** 8
+
+- **Contexto:** las cabeceras (`Content-Security-Policy`, `X-Frame-Options`…) estaban escritas una
+  vez en el bloque `server` de nginx.
+- **Hallazgo:** al comprobarlas con `curl`, la página principal **no devolvía ninguna**. En nginx,
+  un `location` que define su propio `add_header` deja de heredar los del nivel de arriba; el
+  bloque `location = /index.html` añadía un `Cache-Control` y con eso se llevaba por delante las
+  cuatro cabeceras de seguridad.
+- **Decisión:** las cabeceras viven en `frontend/seguridad.conf` y se incluyen con `include` en el
+  `server` **y** en cada `location` que define add_header propios.
+- **Por qué queda anotado:** es un fallo silencioso. No hay error, no hay aviso en el arranque, y
+  la configuración se lee perfectamente correcta. Solo se ve mirando la respuesta.
+
+---
+
+## 035 — La versión se inyecta al compilar, no se escribe en el código
+
+**Fecha:** 2026-08-02 · **Fase:** 8
+
+- **Contexto:** `config.Version` era una constante con `"0.1.0"` escrita a mano.
+- **Decisión:** pasa a ser `var` y se inyecta con
+  `-ldflags "-X .../internal/config.Version=$VERSION"`. El `Dockerfile` la recibe como `ARG` y
+  Compose se la pasa desde el `.env`; en el CI se le pasa el SHA del commit.
+- **Por qué:** una constante en el código dice la versión que alguien se acordó de subir; la
+  inyectada dice de qué compilación salió el binario. Como `/api/v1/health` la devuelve, se puede
+  saber qué hay desplegado sin entrar al servidor.
+
+---
+
+## 036 — El stack no arranca con los secretos de ejemplo
+
+**Fecha:** 2026-08-02 · **Fase:** 8
+
+- **Contexto:** hacía falta un `.env` versionado como plantilla, y a la vez que nadie desplegara
+  con los valores de la plantilla.
+- **Decisión:** `.env.example` trae secretos que **empiezan por `cambia_este`**, y la validación de
+  la configuración los rechaza cuando `GIN_MODO=release` (que es lo que pone el compose). Para no
+  convertir eso en un estorbo, `make env` genera un `.env` con secretos aleatorios de verdad
+  (`openssl rand -hex 32`, o el generador criptográfico de .NET en Windows) y no pisa uno que ya
+  exista.
+- **Por qué:** la alternativa —poner secretos reales en el `.example`— es peor de las dos maneras:
+  o se versionan credenciales, o todo el mundo despliega con las mismas. Que el servidor se niegue
+  a arrancar es un recordatorio que no se puede ignorar por descuido.
+
+---
+
 ## Pendientes anotados (se resuelven en su fase)
 
 - **Fase 3 — Refresh token sin estado:** el refresh token no se guarda en la base, así que se puede

@@ -3,7 +3,7 @@
 Aplicación web de finanzas personales y presupuestos: registra tus ingresos y gastos, organízalos
 por cuentas y categorías, ponles un límite mensual y mira a dónde se te va el dinero.
 
-> **Estado:** en desarrollo. Fases 0 a 7 de 10 completadas — ver la [tabla de avance](#avance-por-fases).
+> **Estado:** en desarrollo. Fases 0 a 8 de 10 completadas — ver la [tabla de avance](#avance-por-fases).
 
 ## Stack
 
@@ -12,43 +12,57 @@ por cuentas y categorías, ponles un límite mensual y mira a dónde se te va el
 | Base de datos | MongoDB 7 |
 | Backend | Go 1.25+ · Gin · driver oficial `mongo-driver/v2` · JWT · bcrypt |
 | Frontend | React 18 · Vite · React Router · axios · Recharts · CSS Modules |
-| Infraestructura | Docker · Docker Compose |
+| Infraestructura | Docker · Docker Compose · nginx · GitHub Actions |
 | Pruebas | testify (Go) · colección de Postman |
 
-## Arranque rápido (desarrollo)
+## Arranque rápido
 
-Requisitos: [Docker Desktop](https://www.docker.com/products/docker-desktop/), Go 1.22+ y Node 18+.
+Lo único que hace falta es [Docker Desktop](https://www.docker.com/products/docker-desktop/).
 
 ```bash
 git clone https://github.com/FNTR3455234/FinTrack.git
 cd FinTrack
 
-# 1. Levanta MongoDB (la primera vez crea el esquema y carga los datos de ejemplo solo)
-make up                 # Windows sin make:  .\make.ps1 up
-
-# 2. Configura el backend
-cp backend/.env.example backend/.env
-
-# 3. Arranca la API en http://localhost:8080
-make dev
-
-# 4. En otra terminal, arranca el frontend en http://localhost:5173
-make web
+make arriba             # Windows sin make:  .\make.ps1 arriba
 ```
 
-Mongo queda escuchando en `localhost:27017` con el usuario `fintrack_admin`. Para detenerlo:
-`make down` (los datos se conservan) o `docker compose -f docker-compose.dev.yml down -v` (los borra).
-Para recargar el esquema y los datos de ejemplo cuando quieras: `make seed`.
+Eso genera un `.env` con secretos aleatorios, construye las dos imágenes y levanta los tres
+servicios en orden. Cuando termina, **<http://localhost:8080>**.
 
-**Usuario de ejemplo:** `demo@fintrack.mx` / `Demo1234!` — trae 6 meses de historia
-(3 cuentas, 10 categorías, 120 transacciones y 6 presupuestos).
+La primera vez MongoDB crea el esquema y carga los datos de ejemplo por su cuenta. Entra con:
+
+> **`demo@fintrack.mx`** / **`Demo1234!`** — 6 meses de historia: 3 cuentas, 10 categorías,
+> 120 transacciones y 6 presupuestos.
+
+| | |
+|---|---|
+| `make abajo` | Detiene el stack (los datos se conservan) |
+| `make logs` | Sigue la bitácora de los tres servicios |
+| `make seed-prod` | Recarga el esquema y los datos de ejemplo |
+| `docker compose down -v` | Detiene y **borra** los datos |
 
 > La semilla está anclada a **julio de 2026** (`ANIO_FINAL` y `MES_FINAL` en
 > `database/02_insertar_datos.js`). El tablero abre en el mes en curso, así que si hoy es un mes
 > posterior verás ceros hasta pulsar la flecha de mes anterior; cambiando esas dos líneas y
-> volviendo a correr `make seed` los datos se re-anclan.
+> volviendo a correr la semilla los datos se re-anclan.
 
-El stack completo en contenedores (`docker compose up` y listo) llega en la fase 8.
+## Arranque para desarrollar
+
+Con recarga en caliente. Requiere además Go 1.25+ y Node 18+.
+
+```bash
+# 1. Solo MongoDB en contenedor (proyecto aparte, volumen aparte)
+make up
+
+# 2. Configura y arranca la API en http://localhost:8080
+cp backend/.env.example backend/.env
+make dev
+
+# 3. En otra terminal, el frontend en http://localhost:5173
+make web
+```
+
+`make seed` recarga el esquema y los datos de ejemplo; `make down` detiene Mongo conservándolos.
 
 ## Atajos
 
@@ -66,12 +80,44 @@ Los mismos targets existen en `Makefile` (Linux/macOS/CI) y en `make.ps1` (Windo
 | `make build` | Compila backend y frontend | fase 7 |
 | `make swagger` | Regenera la especificación OpenAPI | fase 6 |
 | `make postman` | Corre la colección de Postman con Newman | fase 6 |
+| `make env` | Genera un `.env` con secretos aleatorios | fase 8 |
+| `make arriba` / `make abajo` | Levanta o detiene el stack completo | fase 8 |
+| `make logs` / `make seed-prod` | Bitácora y semilla del stack completo | fase 8 |
 
 `make help` (o `.\make.ps1`) lista todo.
 
+## Arquitectura
+
+Tres contenedores en una red privada. **Solo uno publica un puerto**: nginx sirve el frontend y
+además pasa `/api` a la API, así que el navegador ve un único origen y no hay CORS de por medio.
+Ni MongoDB ni la API son alcanzables desde fuera de la red.
+
+```mermaid
+flowchart LR
+    N["🌐 Navegador"]
+
+    subgraph red["red interna de Docker"]
+        direction LR
+        W["<b>web</b><br/>nginx + React<br/>:8080"]
+        A["<b>api</b><br/>Go + Gin<br/>:8080"]
+        M[("<b>mongo</b><br/>MongoDB 7<br/>:27017")]
+    end
+
+    V[["volumen<br/>mongo_datos"]]
+
+    N -->|":8080"| W
+    W -->|"/api/* · /swagger"| A
+    A --> M
+    M --- V
+```
+
+El detalle —las dos imágenes multi-etapa, el arranque por orden de salud, el diagrama de
+autenticación y por qué cada stack de Compose tiene su propio nombre de proyecto— está en
+[`docs/arquitectura.md`](docs/arquitectura.md).
+
 ## La aplicación
 
-Con Mongo, la API y el frontend corriendo, entra en **<http://localhost:5173>**.
+![Tablero de FinTrack](frontend/capturas/01-tablero-claro.png)
 
 | Pantalla | Qué hay |
 |---|---|
@@ -81,18 +127,31 @@ Con Mongo, la API y el frontend corriendo, entra en **<http://localhost:5173>**.
 | Reportes | Las dos consultas relacionales, la tendencia y el saldo de cada cuenta |
 | Cuentas y Categorías | Los catálogos, con archivado en lugar de borrado cuando hay movimientos |
 
+Más capturas, incluido el tema oscuro, en [`frontend/README.md`](frontend/README.md#capturas).
+
 ## Documentación de la API
 
-Con la API corriendo (`make dev`), la referencia interactiva está en
-**<http://localhost:8080/swagger>**: 33 operaciones con sus parámetros, sus cuerpos de ejemplo y sus
-códigos de error. El botón *Authorize* acepta el token y deja probar cualquier endpoint desde el
-navegador.
+Con el stack levantado, la referencia interactiva está en **<http://localhost:8080/swagger>**:
+33 operaciones con sus parámetros, sus cuerpos de ejemplo y sus códigos de error. El botón
+*Authorize* acepta el token y deja probar cualquier endpoint desde el navegador.
+
+## Integración continua
+
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) corre en cada `push` a `main` y en cada
+pull request:
+
+| Trabajo | Qué comprueba |
+|---|---|
+| `backend` | `gofmt`, `go vet` y las pruebas **contra un MongoDB de verdad**, con cobertura |
+| `frontend` | Que el bundle compila, y publica su tamaño |
+| `imagenes` | Que los dos `Dockerfile` construyen |
+| `contrato` | Levanta el **stack completo** y le pasa la colección de Postman |
 
 ## Documentación
 
 | Documento | Contenido |
 |---|---|
-| [`docs/arquitectura.md`](docs/arquitectura.md) | Capas del backend, aislamiento por usuario, flujo de autenticación |
+| [`docs/arquitectura.md`](docs/arquitectura.md) | Los tres contenedores, las capas, el aislamiento por usuario y el flujo de autenticación |
 | [`docs/decisiones.md`](docs/decisiones.md) | Bitácora de decisiones técnicas y su porqué |
 | [`database/modelo.md`](database/modelo.md) | Diagrama entidad-relación, relaciones e índices |
 
@@ -117,7 +176,7 @@ navegador.
 | 5 | Presupuestos, consultas relacionales, resumen, tendencia y alertas | ✅ |
 | 6 | Exportar/importar CSV, Swagger, colección de Postman | ✅ |
 | 7 | Frontend completo: React + Vite, tema claro/oscuro, gráficas y CSV | ✅ |
-| 8 | Dockerfiles, Compose completo, CI, arquitectura | ⏳ |
+| 8 | Imágenes multi-etapa, Compose completo, nginx, CI y arquitectura | ✅ |
 | 9 | Metas de ahorro | ⏳ |
 | 10 | Accesibilidad, rendimiento, seguridad y guía de despliegue | ⏳ |
 

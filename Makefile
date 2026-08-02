@@ -7,11 +7,12 @@
 # empiezan a funcionar en cuanto aterriza su fase. Ver el README para el estado.
 
 COMPOSE_DEV = docker compose -f docker-compose.dev.yml
+COMPOSE = docker compose
 MONGO_URI_DEV = mongodb://fintrack_admin:fintrack_dev_2026@localhost:27017/?authSource=admin
 MONGOSH = mongosh -u fintrack_admin -p fintrack_dev_2026 --authenticationDatabase admin --quiet
 
 .DEFAULT_GOAL := help
-.PHONY: help up down dev web test test-integracion lint seed build swagger postman
+.PHONY: help up down dev web test test-integracion lint seed build swagger postman env arriba abajo logs seed-prod
 
 help: ## Muestra esta ayuda
 	@echo "FinTrack - atajos disponibles:"
@@ -26,6 +27,13 @@ help: ## Muestra esta ayuda
 	@echo "  make build   Compila el backend y el frontend                    [fase 7]"
 	@echo "  make swagger Regenera la especificacion OpenAPI de backend/docs"
 	@echo "  make postman Corre la coleccion de Postman con newman (necesita la API viva)"
+	@echo ""
+	@echo "Stack completo en contenedores (docker-compose.yml):"
+	@echo "  make env       Genera un .env con secretos aleatorios"
+	@echo "  make arriba    Construye y levanta los tres servicios"
+	@echo "  make abajo     Detiene el stack (conserva los datos)"
+	@echo "  make logs      Sigue la bitacora de los tres servicios"
+	@echo "  make seed-prod Recarga la semilla dentro del stack"
 
 up: ## Levanta MongoDB en segundo plano
 	$(COMPOSE_DEV) up -d
@@ -67,3 +75,27 @@ swagger: ## Regenera backend/docs a partir de las anotaciones de los handlers
 
 postman: ## Corre la coleccion de Postman contra la API que ya este corriendo
 	npx --yes newman run postman/FinTrack.postman_collection.json -e postman/FinTrack.postman_environment.json
+
+# --- Stack completo en contenedores -----------------------------------------
+
+env: ## Genera .env con secretos aleatorios (no pisa uno que ya exista)
+	@test ! -f .env || { echo ".env ya existe, no se toca"; exit 0; }
+	@sed -e "s|^MONGO_PASSWORD=.*|MONGO_PASSWORD=$$(openssl rand -hex 16)|" \
+	     -e "s|^JWT_SECRETO_ACCESO=.*|JWT_SECRETO_ACCESO=$$(openssl rand -hex 32)|" \
+	     -e "s|^JWT_SECRETO_REFRESCO=.*|JWT_SECRETO_REFRESCO=$$(openssl rand -hex 32)|" \
+	     .env.example > .env
+	@echo ".env generado con secretos aleatorios"
+
+arriba: env ## Construye las imagenes y levanta el stack completo
+	$(COMPOSE) up --build -d
+	@echo "FinTrack en http://localhost:$$(grep -E '^PUERTO_WEB=' .env | cut -d= -f2)"
+
+abajo: ## Detiene el stack (los datos del volumen se conservan)
+	$(COMPOSE) down
+
+logs: ## Sigue la bitacora de los tres servicios
+	$(COMPOSE) logs -f
+
+seed-prod: ## Recarga esquema y semilla dentro del stack en contenedores
+	$(COMPOSE) exec -T mongo sh -c 'mongosh -u "$$MONGO_INITDB_ROOT_USERNAME" -p "$$MONGO_INITDB_ROOT_PASSWORD" --authenticationDatabase admin --quiet --file /scripts/01_crear_colecciones.js'
+	$(COMPOSE) exec -T mongo sh -c 'mongosh -u "$$MONGO_INITDB_ROOT_USERNAME" -p "$$MONGO_INITDB_ROOT_PASSWORD" --authenticationDatabase admin --quiet --file /scripts/02_insertar_datos.js'

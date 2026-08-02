@@ -4,6 +4,15 @@
 #
 # Uso:  make up   /   .\make.ps1 up
 
+# Nombre del proyecto, explicito y distinto del de docker-compose.yml.
+#
+# Sin esta linea Compose toma el nombre de la carpeta, que es el mismo para los
+# dos archivos: los dos stacks acabarian compartiendo el volumen mongo_datos. Y
+# como la imagen de Mongo solo crea el usuario administrador la PRIMERA vez, con
+# el directorio de datos vacio, el segundo stack se encuentra un volumen que ya
+# tiene el usuario del primero y no puede autenticarse nunca.
+name: fintrack-dev
+
 services:
   mongo:
     image: mongo:7

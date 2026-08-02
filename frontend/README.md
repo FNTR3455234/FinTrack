@@ -25,6 +25,23 @@ No hay que configurar nada: `vite.config.js` deja un proxy de `/api` al 8080, as
 desarrollo el navegador ve un solo origen y **no hay CORS de por medio**. Para apuntar a otro
 backend, copia `.env.example` a `.env`.
 
+### En contenedor
+
+`Dockerfile` es multi-etapa: `node:22-alpine` compila y `nginx:1.27-alpine` sirve. En la imagen
+final —unos 83 MB— no hay Node ni `node_modules`: un bundle compilado son archivos estáticos.
+nginx corre como usuario sin privilegios y escucha en el 8080 (en Linux solo root puede abrir
+puertos por debajo del 1024).
+
+`nginx.conf` hace **lo mismo que el proxy de Vite en desarrollo**: sirve los archivos y pasa
+`/api` y `/swagger` al backend. Por eso `VITE_API_BASE=/api/v1` vale igual en los dos entornos y
+el navegador nunca ve dos orígenes. Además resuelve el *fallback* de aplicación de una sola página
+(`try_files … /index.html`), sin el cual recargar en `/transacciones` daría 404, y separa el caché:
+un año para `/assets/` —Vite les pone un hash del contenido en el nombre— y `no-cache` para
+`index.html`, que es quien los nombra.
+
+Las cabeceras de seguridad viven en `seguridad.conf` y se incluyen en cada `location`; el porqué
+está en la [decisión 034](../docs/decisiones.md).
+
 ## Pantallas
 
 | Ruta | Qué hay |
@@ -154,5 +171,13 @@ Pastel.js    403 kB  (110 kB gzip)  ← recharts, solo en /tablero y /reportes
 
 ## Capturas
 
-En [`capturas/`](capturas/) — se agregan al cerrar la fase 8, con el stack completo en
-contenedores.
+Tomadas del stack en contenedores (`make arriba`) con los datos de ejemplo.
+
+| | |
+|---|---|
+| ![Tablero en tema claro](capturas/01-tablero-claro.png) | ![Tablero en tema oscuro](capturas/02-tablero-oscuro.png) |
+| **Tablero**, tema claro | El mismo, tema oscuro |
+| ![Movimientos](capturas/03-movimientos.png) | ![Presupuestos](capturas/04-presupuestos.png) |
+| **Movimientos** con filtros y paginación | **Presupuestos** con el semáforo del mes |
+| ![Reportes](capturas/05-reportes.png) | ![Entrada](capturas/06-login.png) |
+| **Reportes**: las dos consultas relacionales | **Entrada** |

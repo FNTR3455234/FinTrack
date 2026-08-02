@@ -1,0 +1,99 @@
+# Stack completo de FinTrack: base de datos, API y frontend.
+#
+#   cp .env.example .env      (o: make env, que genera secretos aleatorios)
+#   docker compose up --build
+#   -> http://localhost:8080
+#
+# Para desarrollo con recarga en caliente esta docker-compose.dev.yml, que
+# levanta solo MongoDB.
+
+# Nombre del proyecto, explicito y distinto del de docker-compose.dev.yml: cada
+# stack tiene su volumen y su red, y levantar uno no toca al otro. Ver el
+# comentario largo en docker-compose.dev.yml.
+name: fintrack-prod
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: fintrack-mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USUARIO}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_BD}
+    volumes:
+      - mongo_datos:/data/db
+      # Solo estos dos archivos, no la carpeta entera: /docker-entrypoint-initdb.d
+      # ejecuta tambien los .sh y dispararia 03_respaldo.sh en cada arranque
+      # inicial. Se corren una unica vez, cuando el volumen esta vacio.
+      - ./database/01_crear_colecciones.js:/docker-entrypoint-initdb.d/01_crear_colecciones.js:ro
+      - ./database/02_insertar_datos.js:/docker-entrypoint-initdb.d/02_insertar_datos.js:ro
+      # La carpeta completa en una ruta que Mongo no ejecuta sola, para poder
+      # recargar la semilla a mano (make seed-prod) y para el respaldo.
+      - ./database:/scripts:ro
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand({ ping: 1 }).ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    # SIN ports. Nada fuera de esta red necesita hablar con la base, y publicar
+    # el 27017 en la maquina anfitriona es como se acaban filtrando las bases de
+    # datos. Para entrar: docker compose exec mongo mongosh ...
+    networks:
+      - interna
+
+  api:
+    build:
+      context: ./backend
+      args:
+        VERSION: ${VERSION:-0.1.0}
+    image: fintrack-api:${VERSION:-0.1.0}
+    container_name: fintrack-api
+    restart: unless-stopped
+    environment:
+      PUERTO: "8080"
+      GIN_MODO: release
+      # El nombre del servicio es el nombre de host dentro de la red de Compose.
+      MONGO_URI: mongodb://${MONGO_USUARIO}:${MONGO_PASSWORD}@mongo:27017/?authSource=admin
+      MONGO_BD: ${MONGO_BD}
+      JWT_SECRETO_ACCESO: ${JWT_SECRETO_ACCESO}
+      JWT_SECRETO_REFRESCO: ${JWT_SECRETO_REFRESCO}
+      JWT_MINUTOS_ACCESO: ${JWT_MINUTOS_ACCESO:-15}
+      JWT_DIAS_REFRESCO: ${JWT_DIAS_REFRESCO:-7}
+      # El navegador nunca habla directo con la API: entra por nginx, que la
+      # sirve en el mismo origen. Esta lista solo existe por si algun dia se
+      # publica el puerto y se llama desde otro sitio.
+      CORS_ORIGENES: ${CORS_ORIGENES:-http://localhost:8080}
+    depends_on:
+      mongo:
+        # No basta con que el contenedor de Mongo exista: tiene que estar
+        # aceptando conexiones. Sin esto, la API arranca antes, no conecta y se
+        # apaga (main.go hace os.Exit(1) si la conexion falla).
+        condition: service_healthy
+    # Tampoco publica puerto: quien la expone es nginx en /api.
+    networks:
+      - interna
+
+  web:
+    build:
+      context: ./frontend
+    image: fintrack-web:${VERSION:-0.1.0}
+    container_name: fintrack-web
+    restart: unless-stopped
+    ports:
+      # Unico puerto publicado del stack. Izquierda: la maquina. Derecha: el
+      # contenedor, que escucha en el 8080 por correr sin privilegios.
+      - "${PUERTO_WEB:-8080}:8080"
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - interna
+
+volumes:
+  mongo_datos:
+
+networks:
+  interna:
+    driver: bridge

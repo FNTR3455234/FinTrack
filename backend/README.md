@@ -49,11 +49,32 @@ arranca la API en un solo paso.
 Al arrancar deberías ver:
 
 ```
-level=INFO msg="iniciando FinTrack" version=0.1.0 modo=debug
+level=INFO msg="iniciando FinTrack" version=0.1.0-dev modo=debug
 level=INFO msg="conectado a MongoDB" base=fintrack
 level=INFO msg="indices verificados" cantidad=6
 level=INFO msg="servidor escuchando" direccion=:8080
 ```
+
+### En contenedor
+
+`backend/Dockerfile` es multi-etapa: `golang:1.25-alpine` compila y `alpine:3.21` ejecuta. En la
+imagen final —unos 64 MB— no hay compilador ni código fuente, y el proceso corre como el usuario
+`fintrack` (uid 10001), no como root.
+
+```bash
+docker build -t fintrack-api --build-arg VERSION=1.2.3 ./backend
+```
+
+`VERSION` se graba en el binario con `-ldflags -X .../config.Version`, así que `/api/v1/health`
+devuelve de qué compilación salió lo que está corriendo. Sin la bandera queda `0.1.0-dev`.
+
+El binario se compila con `CGO_ENABLED=0`, así que es estático y no depende de la libc; de Alpine
+solo se usan los certificados y `wget`, que es lo que ejecuta el `HEALTHCHECK` contra
+`/api/v1/health`. Ese healthcheck comprueba también que MongoDB responde, por eso Compose lo usa
+para no arrancar el frontend antes de tiempo.
+
+Lo normal no es construir la imagen a mano: `make arriba` desde la raíz levanta el stack completo
+(ver [`docs/arquitectura.md`](../docs/arquitectura.md)).
 
 ### Variables de entorno
 

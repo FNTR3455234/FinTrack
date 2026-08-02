@@ -1,0 +1,24 @@
+# Lo que NO se manda al demonio de Docker al construir la imagen.
+#
+# Todo lo que se copia en el COPY . . acaba en una capa intermedia, aunque
+# despues no se use: cuanto menos viaje, mas rapido construye y menos se
+# invalida la cache.
+
+# Nunca, jamas: llevaria los secretos dentro de la imagen.
+.env
+.env.local
+
+# Artefactos locales que la imagen vuelve a generar por su cuenta.
+bin/
+coverage.out
+coverage.html
+
+# Las pruebas no se ejecutan dentro de la imagen (de eso se encarga el CI),
+# pero se dejan pasar a proposito: `go build ./...` no las compila y quitarlas
+# obligaria a mantener una lista de exclusiones que se desincroniza sola.
+
+# Ruido del sistema y del editor.
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

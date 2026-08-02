@@ -27,6 +27,7 @@ function Verificar([string]$paso) {
 # Todas las rutas son relativas a la raiz del repo, no al directorio donde se invoca.
 $raiz = $PSScriptRoot
 $composeDev = @("compose", "-f", "$raiz\docker-compose.dev.yml")
+$compose = @("compose", "-f", "$raiz\docker-compose.yml", "--project-directory", "$raiz")
 $mongosh = @("mongosh", "-u", "fintrack_admin", "-p", "fintrack_dev_2026", "--authenticationDatabase", "admin", "--quiet")
 
 function Invoke-Ayuda {
@@ -42,6 +43,13 @@ function Invoke-Ayuda {
     Write-Host "  .\make.ps1 build   Compila el backend y el frontend                    [fase 7]"
     Write-Host "  .\make.ps1 swagger Regenera la especificacion OpenAPI de backend/docs"
     Write-Host "  .\make.ps1 postman Corre la coleccion de Postman con newman (necesita la API viva)"
+    Write-Host ""
+    Write-Host "Stack completo en contenedores (docker-compose.yml):"
+    Write-Host "  .\make.ps1 env       Genera un .env con secretos aleatorios"
+    Write-Host "  .\make.ps1 arriba    Construye y levanta los tres servicios"
+    Write-Host "  .\make.ps1 abajo     Detiene el stack (conserva los datos)"
+    Write-Host "  .\make.ps1 logs      Sigue la bitacora de los tres servicios"
+    Write-Host "  .\make.ps1 seed-prod Recarga la semilla dentro del stack"
 }
 
 function Invoke-Up {
@@ -168,6 +176,57 @@ function Invoke-Postman {
     Verificar "correr la coleccion de Postman"
 }
 
+# --- Stack completo en contenedores -----------------------------------------
+
+# Secreto genera una cadena hexadecimal aleatoria. Se usa el generador
+# criptografico de .NET y no Get-Random, que es predecible y no sirve para esto.
+function Secreto([int]$bytes) {
+    $datos = New-Object byte[] $bytes
+    [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($datos)
+    return (($datos | ForEach-Object { $_.ToString("x2") }) -join "")
+}
+
+function Invoke-Env {
+    $destino = "$raiz\.env"
+    if (Test-Path $destino) {
+        Write-Host ".env ya existe, no se toca"
+        return
+    }
+    (Get-Content "$raiz\.env.example") `
+        -replace '^MONGO_PASSWORD=.*',       "MONGO_PASSWORD=$(Secreto 16)" `
+        -replace '^JWT_SECRETO_ACCESO=.*',   "JWT_SECRETO_ACCESO=$(Secreto 32)" `
+        -replace '^JWT_SECRETO_REFRESCO=.*', "JWT_SECRETO_REFRESCO=$(Secreto 32)" |
+        Set-Content $destino -Encoding utf8
+    Write-Host ".env generado con secretos aleatorios"
+}
+
+function Invoke-Arriba {
+    Invoke-Env
+    & docker @compose up --build -d
+    Verificar "levantar el stack"
+    $puerto = (Select-String -Path "$raiz\.env" -Pattern '^PUERTO_WEB=(.*)$').Matches.Groups[1].Value
+    Write-Host "FinTrack en http://localhost:$puerto"
+}
+
+function Invoke-Abajo {
+    & docker @compose down
+    Verificar "detener el stack"
+}
+
+function Invoke-Logs {
+    & docker @compose logs -f
+}
+
+function Invoke-SeedProd {
+    # Las credenciales se leen dentro del contenedor desde su propio entorno, en
+    # vez de pasarlas por la linea de comandos: asi no acaban en el historial.
+    $orden = 'mongosh -u "$MONGO_INITDB_ROOT_USERNAME" -p "$MONGO_INITDB_ROOT_PASSWORD" --authenticationDatabase admin --quiet --file'
+    & docker @compose exec -T mongo sh -c "$orden /scripts/01_crear_colecciones.js"
+    Verificar "crear las colecciones"
+    & docker @compose exec -T mongo sh -c "$orden /scripts/02_insertar_datos.js"
+    Verificar "cargar la semilla"
+}
+
 switch ($Target.ToLower()) {
     "help"  { Invoke-Ayuda }
     "up"    { Invoke-Up }
@@ -181,6 +240,11 @@ switch ($Target.ToLower()) {
     "build" { Invoke-Build }
     "swagger" { Invoke-Swagger }
     "postman" { Invoke-Postman }
+    "env"       { Invoke-Env }
+    "arriba"    { Invoke-Arriba }
+    "abajo"     { Invoke-Abajo }
+    "logs"      { Invoke-Logs }
+    "seed-prod" { Invoke-SeedProd }
     default {
         Write-Host "Target desconocido: $Target"
         Invoke-Ayuda

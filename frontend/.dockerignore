@@ -1,0 +1,20 @@
+# Lo que NO se manda al demonio de Docker al construir la imagen.
+
+# node_modules es lo mas importante de esta lista: son cientos de MB que la
+# imagen vuelve a instalar por su cuenta con npm ci, y ademas los binarios de
+# Windows no servirian dentro de un contenedor Linux.
+node_modules/
+
+# dist se genera dentro de la imagen; el de aqui podria estar viejo.
+dist/
+
+.env
+.env.local
+
+# Las capturas son para el README, no para la imagen.
+capturas/
+
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

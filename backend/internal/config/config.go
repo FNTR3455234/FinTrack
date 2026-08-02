@@ -11,8 +11,17 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// Version de la API. La fase 8 la inyecta en tiempo de compilacion con -ldflags.
-const Version = "0.1.0"
+// Version de la API. La responde /health y se escribe en la bitacora al
+// arrancar.
+//
+// Es var y no const para poder inyectarla al compilar, sin tocar el codigo:
+//
+//	go build -ldflags "-X github.com/FNTR3455234/FinTrack/backend/internal/config.Version=1.2.3"
+//
+// Asi la imagen de Docker lleva grabado el commit del que salio (ver
+// backend/Dockerfile) y /health sirve para saber que version esta desplegada.
+// El valor de aqui es el que se usa al compilar en local, sin la bandera.
+var Version = "0.1.0-dev"
 
 // Config son todos los valores que el servidor necesita para arrancar.
 type Config struct {
