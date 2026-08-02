@@ -21,11 +21,20 @@ imágenes.
 
 ## 2. Primer despliegue
 
+En un servidor Linux:
+
 ```bash
 git clone https://github.com/FNTR3455234/FinTrack.git
 cd FinTrack
 
-make env                  # genera .env con secretos aleatorios
+make arriba               # genera el .env, construye y levanta, en un paso
+```
+
+O paso a paso, si el servidor no tiene `make`:
+
+```bash
+cp .env.example .env
+# edita .env: cambia MONGO_PASSWORD y los dos secretos de JWT
 docker compose up --build -d --wait
 ```
 

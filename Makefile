@@ -68,9 +68,15 @@ build: ## Compila el binario de la API y el bundle del frontend
 	cd backend && go build -o bin/api ./cmd/api
 	cd frontend && npm ci && npm run build
 
+# swag se invoca por su ruta completa y no por el nombre a secas: go install lo
+# deja en $(go env GOPATH)/bin, que en la mayoria de las instalaciones de Linux
+# no esta en el PATH. Con `swag init` a secas, la receta instalaba la
+# herramienta y acto seguido fallaba con "command not found".
+SWAG = $(shell go env GOPATH)/bin/swag
+
 swagger: ## Regenera backend/docs a partir de las anotaciones de los handlers
-	@command -v swag >/dev/null || go install github.com/swaggo/swag/cmd/swag@latest
-	cd backend && swag init -g cmd/api/main.go -o docs --parseDependency --parseInternal
+	@command -v swag >/dev/null || test -x "$(SWAG)" || go install github.com/swaggo/swag/cmd/swag@latest
+	cd backend && $$(command -v swag || echo "$(SWAG)") init -g cmd/api/main.go -o docs --parseDependency --parseInternal
 	@echo "Listo. Levanta la API y abre http://localhost:8080/swagger"
 
 postman: ## Corre la coleccion de Postman contra la API que ya este corriendo
@@ -78,13 +84,21 @@ postman: ## Corre la coleccion de Postman contra la API que ya este corriendo
 
 # --- Stack completo en contenedores -----------------------------------------
 
+# OJO con el if de una sola pieza: make ejecuta CADA LINEA de una receta en un
+# shell distinto, asi que un "exit 0" en la primera linea no impide que corra la
+# segunda. Escrito como dos lineas, esto decia "no se toca" y despues pisaba el
+# .env igual, con una contraseña de Mongo nueva; como el volumen ya tiene creado
+# el usuario administrador, la API se quedaba sin poder autenticarse.
 env: ## Genera .env con secretos aleatorios (no pisa uno que ya exista)
-	@test ! -f .env || { echo ".env ya existe, no se toca"; exit 0; }
-	@sed -e "s|^MONGO_PASSWORD=.*|MONGO_PASSWORD=$$(openssl rand -hex 16)|" \
-	     -e "s|^JWT_SECRETO_ACCESO=.*|JWT_SECRETO_ACCESO=$$(openssl rand -hex 32)|" \
-	     -e "s|^JWT_SECRETO_REFRESCO=.*|JWT_SECRETO_REFRESCO=$$(openssl rand -hex 32)|" \
-	     .env.example > .env
-	@echo ".env generado con secretos aleatorios"
+	@if [ -f .env ]; then \
+	  echo ".env ya existe, no se toca"; \
+	else \
+	  sed -e "s|^MONGO_PASSWORD=.*|MONGO_PASSWORD=$$(openssl rand -hex 16)|" \
+	      -e "s|^JWT_SECRETO_ACCESO=.*|JWT_SECRETO_ACCESO=$$(openssl rand -hex 32)|" \
+	      -e "s|^JWT_SECRETO_REFRESCO=.*|JWT_SECRETO_REFRESCO=$$(openssl rand -hex 32)|" \
+	      .env.example > .env; \
+	  echo ".env generado con secretos aleatorios"; \
+	fi
 
 arriba: env ## Construye las imagenes y levanta el stack completo
 	$(COMPOSE) up --build -d

@@ -17,17 +17,37 @@ por cuentas y categorías, ponles un límite mensual y mira a dónde se te va el
 
 ## Arranque rápido
 
-Lo único que hace falta es [Docker Desktop](https://www.docker.com/products/docker-desktop/).
+Lo único que hace falta es Docker (Engine 24+ en Linux, o
+[Docker Desktop](https://www.docker.com/products/docker-desktop/) en Windows y macOS).
 
 ```bash
 git clone https://github.com/FNTR3455234/FinTrack.git
 cd FinTrack
-
-make arriba             # Windows sin make:  .\make.ps1 arriba
 ```
 
-Eso genera un `.env` con secretos aleatorios, construye las dos imágenes y levanta los tres
+**Linux y macOS**
+
+```bash
+make arriba
+```
+
+**Windows** (PowerShell, sin necesidad de instalar `make`)
+
+```powershell
+.\make.ps1 arriba
+```
+
+El atajo genera un `.env` con secretos aleatorios, construye las dos imágenes y levanta los tres
 servicios en orden. Cuando termina, **<http://localhost:8080>**.
+
+**Sin `make`, en cualquier sistema**, son los dos pasos que hay debajo del atajo:
+
+```bash
+cp .env.example .env
+# edita .env y cambia MONGO_PASSWORD y los dos secretos de JWT:
+# el stack se niega a arrancar con los valores de ejemplo
+docker compose up --build -d --wait
+```
 
 La primera vez MongoDB crea el esquema y carga los datos de ejemplo por su cuenta. Entra con:
 
@@ -48,7 +68,8 @@ La primera vez MongoDB crea el esquema y carga los datos de ejemplo por su cuent
 
 ## Arranque para desarrollar
 
-Con recarga en caliente. Requiere además Go 1.25+ y Node 18+.
+Con recarga en caliente. Requiere además Go 1.25+ y Node 18+. En Windows, cambia `make` por
+`.\make.ps1` en los tres pasos.
 
 ```bash
 # 1. Solo MongoDB en contenedor (proyecto aparte, volumen aparte)
@@ -66,7 +87,8 @@ make web
 
 ## Atajos
 
-Los mismos targets existen en `Makefile` (Linux/macOS/CI) y en `make.ps1` (Windows sin `make`):
+Los mismos targets existen en `Makefile` (Linux, macOS y el CI) y en `make.ps1` (Windows sin
+`make`). En Linux se invocan con `make <target>`; en Windows, con `.\make.ps1 <target>`:
 
 | Atajo | Qué hace | Disponible desde |
 |---|---|---|
@@ -170,7 +192,7 @@ El detalle, con cómo se midió cada cosa, está en
 |---|---|
 | [`docs/arquitectura.md`](docs/arquitectura.md) | Los tres contenedores, las capas, el aislamiento por usuario, la revisión de seguridad y las medidas de rendimiento |
 | [`docs/despliegue.md`](docs/despliegue.md) | Poner esto en un servidor: TLS, respaldos, actualizaciones y qué **no** resuelve |
-| [`docs/decisiones.md`](docs/decisiones.md) | Bitácora de las 45 decisiones técnicas y su porqué |
+| [`docs/decisiones.md`](docs/decisiones.md) | Bitácora de las 46 decisiones técnicas y su porqué |
 | [`database/modelo.md`](database/modelo.md) | Diagrama entidad-relación, relaciones e índices |
 
 ### Entregables

@@ -748,6 +748,34 @@ justificarlas después. Formato por entrada: **decisión, contexto, alternativas
 
 ---
 
+## 046 — El `Makefile` se probó en Linux de verdad, y estaba roto
+
+**Fecha:** 2026-08-02 · **Fase:** 10
+
+- **Contexto:** el `Makefile` es el artefacto que se entrega y el que usa el CI, pero todo el
+  desarrollo fue en Windows con `make.ps1`. **Nunca se había ejecutado.**
+- **Cómo se probó:** una imagen `golang:1.25-alpine` con `make` y el CLI de Docker, montando el
+  socket del demonio y el repositorio **en la misma ruta que ve el demonio**
+  (`/run/desktop/mnt/host/c/...`). Sin ese detalle, Compose resuelve los `bind mount` contra una
+  ruta que solo existe dentro del contenedor de pruebas y MongoDB arranca enfermo.
+- **Dos fallos reales, los dos exclusivos de Linux:**
+  1. **`make env` pisaba un `.env` existente.** Estaba escrito como
+     `@test ! -f .env || { echo "no se toca"; exit 0; }` y, en la línea siguiente, el `sed`. Pero
+     **make ejecuta cada línea de una receta en un shell distinto**, así que el `exit 0` no impedía
+     nada: imprimía "no se toca" y lo pisaba igual, con una contraseña de Mongo nueva. Como el
+     volumen ya tiene creado el usuario administrador, el segundo `make arriba` dejaba la API sin
+     poder autenticarse — justo el fallo que la guía de despliegue documenta como el más común.
+     Ahora es un solo `if … fi` continuado con `\`.
+  2. **`make swagger` instalaba `swag` y acto seguido no lo encontraba.** `go install` lo deja en
+     `$(go env GOPATH)/bin`, que en la mayoría de instalaciones de Linux no está en el `PATH`.
+     Ahora se invoca por su ruta completa si no está en el `PATH`.
+- **Por qué queda anotado:** el equivalente en PowerShell no tenía ninguno de los dos, porque
+  PowerShell corre el bloque entero en un shell y `make.ps1` ya usaba la ruta completa de `swag`.
+  Tener dos implementaciones de los mismos atajos significa que **probar una no prueba la otra**,
+  y durante nueve fases solo se estuvo probando una.
+
+---
+
 ## Pendientes anotados (se resuelven en su fase)
 
 - **Fase 3 — Refresh token sin estado:** el refresh token no se guarda en la base, así que se puede
