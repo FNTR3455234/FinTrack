@@ -1,0 +1,1769 @@
+basePath: /api/v1
+consumes:
+- application/json
+definitions:
+  github_com_FNTR3455234_FinTrack_backend_internal_modelos.AlertaPresupuesto:
+    properties:
+      categoria_id:
+        type: string
+      disponible:
+        type: number
+      estado:
+        type: string
+      gastado:
+        type: number
+      mensaje:
+        type: string
+      monto_limite:
+        type: number
+      nombre:
+        type: string
+      porcentaje_usado:
+        type: number
+    type: object
+  github_com_FNTR3455234_FinTrack_backend_internal_modelos.Categoria:
+    properties:
+      archivada:
+        type: boolean
+      color:
+        type: string
+      icono:
+        type: string
+      id:
+        type: string
+      nombre:
+        type: string
+      tipo:
+        type: string
+    type: object
+  github_com_FNTR3455234_FinTrack_backend_internal_modelos.ContadorEstados:
+    properties:
+      en_alerta:
+        type: integer
+      excedidos:
+        type: integer
+      total:
+        type: integer
+    type: object
+  github_com_FNTR3455234_FinTrack_backend_internal_modelos.Cuenta:
+    properties:
+      archivada:
+        type: boolean
+      color:
+        type: string
+      id:
+        type: string
+      nombre:
+        type: string
+      saldo_inicial:
+        type: number
+      tipo:
+        type: string
+    type: object
+  github_com_FNTR3455234_FinTrack_backend_internal_modelos.EstadoPresupuesto:
+    properties:
+      categoria_id:
+        type: string
+      color:
+        type: string
+      disponible:
+        type: number
+      estado:
+        type: string
+      gastado:
+        type: number
+      monto_limite:
+        type: number
+      nombre:
+        type: string
+      porcentaje_usado:
+        type: number
+      presupuesto_id:
+        type: string
+    type: object
+  github_com_FNTR3455234_FinTrack_backend_internal_modelos.GastoPorCategoria:
+    properties:
+      cantidad:
+        type: integer
+      categoria_id:
+        type: string
+      color:
+        type: string
+      icono:
+        type: string
+      nombre:
+        type: string
+      porcentaje:
+        type: number
+      total:
+        type: number
+    type: object
+  github_com_FNTR3455234_FinTrack_backend_internal_modelos.Periodo:
+    properties:
+      anio:
+        type: integer
+      mes:
+        type: integer
+    type: object
+  github_com_FNTR3455234_FinTrack_backend_internal_modelos.PeticionActualizarPerfil:
+    properties:
+      moneda:
+        type: string
+      nombre:
+        maxLength: 80
+        minLength: 2
+        type: string
+    required:
+    - moneda
+    - nombre
+    type: object
+  github_com_FNTR3455234_FinTrack_backend_internal_modelos.PeticionCategoria:
+    properties:
+      archivada:
+        type: boolean
+      color:
+        type: string
+      icono:
+        maxLength: 40
+        type: string
+      nombre:
+        maxLength: 60
+        minLength: 1
+        type: string
+      tipo:
+        enum:
+        - ingreso
+        - gasto
+        type: string
+    required:
+    - color
+    - icono
+    - nombre
+    - tipo
+    type: object
+  github_com_FNTR3455234_FinTrack_backend_internal_modelos.PeticionCuenta:
+    properties:
+      archivada:
+        type: boolean
+      color:
+        type: string
+      nombre:
+        maxLength: 60
+        minLength: 1
+        type: string
+      saldo_inicial:
+        type: number
+      tipo:
+        enum:
+        - efectivo
+        - debito
+        - credito
+        - ahorro
+        type: string
+    required:
+    - color
+    - nombre
+    - saldo_inicial
+    - tipo
+    type: object
+  github_com_FNTR3455234_FinTrack_backend_internal_modelos.PeticionLogin:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  github_com_FNTR3455234_FinTrack_backend_internal_modelos.PeticionPresupuesto:
+    properties:
+      anio:
+        maximum: 2100
+        minimum: 2000
+        type: integer
+      categoria_id:
+        type: string
+      mes:
+        maximum: 12
+        minimum: 1
+        type: integer
+      monto_limite:
+        type: number
+    required:
+    - anio
+    - categoria_id
+    - mes
+    - monto_limite
+    type: object
+  github_com_FNTR3455234_FinTrack_backend_internal_modelos.PeticionRefresco:
+    properties:
+      token_refresco:
+        type: string
+    required:
+    - token_refresco
+    type: object
+  github_com_FNTR3455234_FinTrack_backend_internal_modelos.PeticionRegistro:
+    properties:
+      email:
+        maxLength: 120
+        type: string
+      moneda:
+        type: string
+      nombre:
+        maxLength: 80
+        minLength: 2
+        type: string
+      password:
+        maxLength: 72
+        minLength: 8
+        type: string
+    required:
+    - email
+    - nombre
+    - password
+    type: object
+  github_com_FNTR3455234_FinTrack_backend_internal_modelos.PeticionTransaccion:
+    properties:
+      categoria_id:
+        type: string
+      cuenta_id:
+        type: string
+      descripcion:
+        maxLength: 140
+        minLength: 1
+        type: string
+      fecha:
+        type: string
+      monto:
+        type: number
+      notas:
+        maxLength: 500
+        type: string
+      tipo:
+        enum:
+        - ingreso
+        - gasto
+        type: string
+    required:
+    - categoria_id
+    - cuenta_id
+    - descripcion
+    - fecha
+    - monto
+    - tipo
+    type: object
+  github_com_FNTR3455234_FinTrack_backend_internal_modelos.Presupuesto:
+    properties:
+      anio:
+        type: integer
+      categoria_id:
+        type: string
+      id:
+        type: string
+      mes:
+        type: integer
+      monto_limite:
+        type: number
+    type: object
+  github_com_FNTR3455234_FinTrack_backend_internal_modelos.PuntoTendencia:
+    properties:
+      balance:
+        type: number
+      cantidad:
+        type: integer
+      etiqueta:
+        type: string
+      gastos:
+        type: number
+      ingresos:
+        type: number
+      periodo:
+        $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.Periodo'
+    type: object
+  github_com_FNTR3455234_FinTrack_backend_internal_modelos.RespuestaRefresco:
+    properties:
+      expira_en:
+        type: integer
+      token_acceso:
+        type: string
+    type: object
+  github_com_FNTR3455234_FinTrack_backend_internal_modelos.RespuestaSesion:
+    properties:
+      expira_en:
+        description: segundos de vida del token de acceso
+        type: integer
+      token_acceso:
+        type: string
+      token_refresco:
+        type: string
+      usuario:
+        $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.Usuario'
+    type: object
+  github_com_FNTR3455234_FinTrack_backend_internal_modelos.ResultadoImportacion:
+    properties:
+      importadas:
+        type: integer
+    type: object
+  github_com_FNTR3455234_FinTrack_backend_internal_modelos.Resumen:
+    properties:
+      balance:
+        type: number
+      gastos:
+        type: number
+      ingresos:
+        type: number
+      movimientos:
+        type: integer
+      periodo:
+        $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.Periodo'
+      presupuestos:
+        $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.ContadorEstados'
+      saldo_total:
+        type: number
+    type: object
+  github_com_FNTR3455234_FinTrack_backend_internal_modelos.SaldoCuenta:
+    properties:
+      archivada:
+        type: boolean
+      color:
+        type: string
+      cuenta_id:
+        type: string
+      gastos:
+        type: number
+      ingresos:
+        type: number
+      nombre:
+        type: string
+      saldo:
+        type: number
+      saldo_inicial:
+        type: number
+      tipo:
+        type: string
+    type: object
+  github_com_FNTR3455234_FinTrack_backend_internal_modelos.Transaccion:
+    properties:
+      actualizado_en:
+        type: string
+      categoria_id:
+        type: string
+      creado_en:
+        type: string
+      cuenta_id:
+        type: string
+      descripcion:
+        type: string
+      fecha:
+        type: string
+      id:
+        type: string
+      monto:
+        type: number
+      notas:
+        type: string
+      tipo:
+        type: string
+    type: object
+  github_com_FNTR3455234_FinTrack_backend_internal_modelos.TransaccionCreada:
+    properties:
+      actualizado_en:
+        type: string
+      alerta:
+        $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.AlertaPresupuesto'
+      categoria_id:
+        type: string
+      creado_en:
+        type: string
+      cuenta_id:
+        type: string
+      descripcion:
+        type: string
+      fecha:
+        type: string
+      id:
+        type: string
+      monto:
+        type: number
+      notas:
+        type: string
+      tipo:
+        type: string
+    type: object
+  github_com_FNTR3455234_FinTrack_backend_internal_modelos.Usuario:
+    properties:
+      activo:
+        type: boolean
+      email:
+        type: string
+      fecha_registro:
+        type: string
+      id:
+        type: string
+      moneda:
+        type: string
+      nombre:
+        type: string
+    type: object
+  github_com_FNTR3455234_FinTrack_backend_internal_respuestas.Detalle:
+    properties:
+      codigo:
+        type: string
+      detalles:
+        items:
+          type: string
+        type: array
+      mensaje:
+        type: string
+    type: object
+  github_com_FNTR3455234_FinTrack_backend_internal_respuestas.Meta:
+    properties:
+      limite:
+        type: integer
+      pagina:
+        type: integer
+      total:
+        type: integer
+      total_paginas:
+        type: integer
+    type: object
+  github_com_FNTR3455234_FinTrack_backend_internal_respuestas.Sobre:
+    properties:
+      datos: {}
+      meta:
+        $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.Meta'
+    type: object
+  github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError:
+    properties:
+      error:
+        $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.Detalle'
+    type: object
+  internal_handlers.EstadoSalud:
+    properties:
+      estado:
+        type: string
+      hora:
+        type: string
+      mongo:
+        type: string
+      version:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: |-
+    API REST de finanzas personales: cuentas, categorias, transacciones, presupuestos y reportes.
+    Todos los datos pertenecen a un usuario. El identificador del dueño sale siempre del token, nunca del cuerpo de la peticion.
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  title: FinTrack API
+  version: 0.1.0
+paths:
+  /auth/login:
+    post:
+      description: Devuelve el mismo error si el correo no existe o si la contraseña
+        es incorrecta, para no revelar que correos estan registrados.
+      parameters:
+      - description: Correo y contraseña
+        in: body
+        name: cuerpo
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.PeticionLogin'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.Sobre'
+            - properties:
+                datos:
+                  $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.RespuestaSesion'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+      summary: Iniciar sesion
+      tags:
+      - auth
+  /auth/perfil:
+    get:
+      description: Datos del dueño del token.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.Sobre'
+            - properties:
+                datos:
+                  $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.Usuario'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+      security:
+      - BearerAuth: []
+      summary: Perfil del usuario
+      tags:
+      - auth
+    put:
+      description: Cambia el nombre y la moneda. El correo y la contraseña no se editan
+        aqui.
+      parameters:
+      - description: Nombre y moneda
+        in: body
+        name: cuerpo
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.PeticionActualizarPerfil'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.Sobre'
+            - properties:
+                datos:
+                  $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.Usuario'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+      security:
+      - BearerAuth: []
+      summary: Editar el perfil
+      tags:
+      - auth
+  /auth/refresh:
+    post:
+      description: 'Devuelve SOLO un token de acceso nuevo: el de refresco sigue valido
+        hasta que expire, a los 7 dias.'
+      parameters:
+      - description: Token de refresco
+        in: body
+        name: cuerpo
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.PeticionRefresco'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.Sobre'
+            - properties:
+                datos:
+                  $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.RespuestaRefresco'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+      summary: Renovar el token de acceso
+      tags:
+      - auth
+  /auth/registro:
+    post:
+      description: Da de alta la cuenta y devuelve la sesion ya iniciada.
+      parameters:
+      - description: Datos del usuario
+        in: body
+        name: cuerpo
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.PeticionRegistro'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.Sobre'
+            - properties:
+                datos:
+                  $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.RespuestaSesion'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+      summary: Registrar un usuario
+      tags:
+      - auth
+  /categorias:
+    get:
+      description: Solo las del usuario del token.
+      parameters:
+      - description: Filtra por tipo
+        enum:
+        - ingreso
+        - gasto
+        in: query
+        name: tipo
+        type: string
+      - description: Incluye tambien las archivadas
+        in: query
+        name: incluir_archivadas
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.Sobre'
+            - properties:
+                datos:
+                  items:
+                    $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.Categoria'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+      security:
+      - BearerAuth: []
+      summary: Listar categorias
+      tags:
+      - categorias
+    post:
+      parameters:
+      - description: Datos de la categoria
+        in: body
+        name: cuerpo
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.PeticionCategoria'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.Sobre'
+            - properties:
+                datos:
+                  $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.Categoria'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+      security:
+      - BearerAuth: []
+      summary: Crear una categoria
+      tags:
+      - categorias
+  /categorias/{id}:
+    delete:
+      description: Responde 409 si tiene movimientos o presupuestos.
+      parameters:
+      - description: Identificador de 24 caracteres
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Sin contenido
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+      security:
+      - BearerAuth: []
+      summary: Borrar una categoria
+      tags:
+      - categorias
+    get:
+      parameters:
+      - description: Identificador de 24 caracteres
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.Sobre'
+            - properties:
+                datos:
+                  $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.Categoria'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+      security:
+      - BearerAuth: []
+      summary: Obtener una categoria
+      tags:
+      - categorias
+    put:
+      description: No se puede cambiar el tipo de una categoria que ya tiene movimientos
+        (409).
+      parameters:
+      - description: Identificador de 24 caracteres
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Datos de la categoria
+        in: body
+        name: cuerpo
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.PeticionCategoria'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.Sobre'
+            - properties:
+                datos:
+                  $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.Categoria'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+      security:
+      - BearerAuth: []
+      summary: Editar una categoria
+      tags:
+      - categorias
+  /cuentas:
+    get:
+      description: Solo las del usuario del token.
+      parameters:
+      - description: Incluye tambien las archivadas
+        in: query
+        name: incluir_archivadas
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.Sobre'
+            - properties:
+                datos:
+                  items:
+                    $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.Cuenta'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+      security:
+      - BearerAuth: []
+      summary: Listar cuentas
+      tags:
+      - cuentas
+    post:
+      parameters:
+      - description: Datos de la cuenta
+        in: body
+        name: cuerpo
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.PeticionCuenta'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.Sobre'
+            - properties:
+                datos:
+                  $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.Cuenta'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+      security:
+      - BearerAuth: []
+      summary: Crear una cuenta
+      tags:
+      - cuentas
+  /cuentas/{id}:
+    delete:
+      description: 'Responde 409 CUENTA_CON_TRANSACCIONES si tiene movimientos. No
+        hay borrado en cascada: archivala en su lugar.'
+      parameters:
+      - description: Identificador de 24 caracteres
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Sin contenido
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+      security:
+      - BearerAuth: []
+      summary: Borrar una cuenta
+      tags:
+      - cuentas
+    get:
+      description: 'Responde 404 si el identificador es de otro usuario: un 403 confirmaria
+        que existe.'
+      parameters:
+      - description: Identificador de 24 caracteres
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.Sobre'
+            - properties:
+                datos:
+                  $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.Cuenta'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+      security:
+      - BearerAuth: []
+      summary: Obtener una cuenta
+      tags:
+      - cuentas
+    put:
+      parameters:
+      - description: Identificador de 24 caracteres
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Datos de la cuenta
+        in: body
+        name: cuerpo
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.PeticionCuenta'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.Sobre'
+            - properties:
+                datos:
+                  $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.Cuenta'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+      security:
+      - BearerAuth: []
+      summary: Editar una cuenta
+      tags:
+      - cuentas
+  /health:
+    get:
+      description: 'Responde 200 si la API y MongoDB estan vivos, y 503 si la base
+        no contesta. No pide token: lo consulta el healthcheck de Docker.'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.Sobre'
+            - properties:
+                datos:
+                  $ref: '#/definitions/internal_handlers.EstadoSalud'
+              type: object
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+      summary: Estado del servicio
+      tags:
+      - salud
+  /presupuestos:
+    get:
+      description: Sin mes ni anio los devuelve todos; con ellos, solo los de ese
+        periodo.
+      parameters:
+      - description: Mes del 1 al 12 (por defecto, el mes en curso)
+        in: query
+        name: mes
+        type: integer
+      - description: Año de 2000 a 2100 (por defecto, el año en curso)
+        in: query
+        name: anio
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.Sobre'
+            - properties:
+                datos:
+                  items:
+                    $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.Presupuesto'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+      security:
+      - BearerAuth: []
+      summary: Listar presupuestos
+      tags:
+      - presupuestos
+    post:
+      description: Solo se presupuestan categorias de gasto. Un indice unico impide
+        dos presupuestos para la misma categoria y mes (409).
+      parameters:
+      - description: Categoria, limite y periodo
+        in: body
+        name: cuerpo
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.PeticionPresupuesto'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.Sobre'
+            - properties:
+                datos:
+                  $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.Presupuesto'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+      security:
+      - BearerAuth: []
+      summary: Crear un presupuesto
+      tags:
+      - presupuestos
+  /presupuestos/{id}:
+    delete:
+      parameters:
+      - description: Identificador de 24 caracteres
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Sin contenido
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+      security:
+      - BearerAuth: []
+      summary: Borrar un presupuesto
+      tags:
+      - presupuestos
+    get:
+      parameters:
+      - description: Identificador de 24 caracteres
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.Sobre'
+            - properties:
+                datos:
+                  $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.Presupuesto'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+      security:
+      - BearerAuth: []
+      summary: Obtener un presupuesto
+      tags:
+      - presupuestos
+    put:
+      description: Moverlo al periodo de otro que ya existe tambien es un duplicado
+        (409).
+      parameters:
+      - description: Identificador de 24 caracteres
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Categoria, limite y periodo
+        in: body
+        name: cuerpo
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.PeticionPresupuesto'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.Sobre'
+            - properties:
+                datos:
+                  $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.Presupuesto'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+      security:
+      - BearerAuth: []
+      summary: Editar un presupuesto
+      tags:
+      - presupuestos
+  /reportes/estado-presupuestos:
+    get:
+      description: Presupuestado contra gastado en cada categoria del mes, con el
+        semaforo ok / alerta / excedido. Cruza presupuestos con categorias y transacciones.
+      parameters:
+      - description: Mes del 1 al 12 (por defecto, el mes en curso)
+        in: query
+        name: mes
+        type: integer
+      - description: Año de 2000 a 2100 (por defecto, el año en curso)
+        in: query
+        name: anio
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.Sobre'
+            - properties:
+                datos:
+                  items:
+                    $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.EstadoPresupuesto'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+      security:
+      - BearerAuth: []
+      summary: Estado de presupuestos (consulta relacional 2)
+      tags:
+      - reportes
+  /reportes/gastos-por-categoria:
+    get:
+      description: 'En que se fue el dinero del mes: total, numero de movimientos
+        y peso porcentual de cada categoria. Cruza transacciones con categorias.'
+      parameters:
+      - description: Mes del 1 al 12 (por defecto, el mes en curso)
+        in: query
+        name: mes
+        type: integer
+      - description: Año de 2000 a 2100 (por defecto, el año en curso)
+        in: query
+        name: anio
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.Sobre'
+            - properties:
+                datos:
+                  items:
+                    $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.GastoPorCategoria'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+      security:
+      - BearerAuth: []
+      summary: Gastos por categoria (consulta relacional 1)
+      tags:
+      - reportes
+  /reportes/resumen:
+    get:
+      description: Ingresos, gastos, balance, saldo disponible y conteo del semaforo
+        de presupuestos.
+      parameters:
+      - description: Mes del 1 al 12 (por defecto, el mes en curso)
+        in: query
+        name: mes
+        type: integer
+      - description: Año de 2000 a 2100 (por defecto, el año en curso)
+        in: query
+        name: anio
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.Sobre'
+            - properties:
+                datos:
+                  $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.Resumen'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+      security:
+      - BearerAuth: []
+      summary: Resumen del mes
+      tags:
+      - reportes
+  /reportes/saldos:
+    get:
+      description: 'saldo_inicial + ingresos - gastos. No se guarda: se calcula cruzando
+        cuentas con transacciones.'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.Sobre'
+            - properties:
+                datos:
+                  items:
+                    $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.SaldoCuenta'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+      security:
+      - BearerAuth: []
+      summary: Saldo de cada cuenta
+      tags:
+      - reportes
+  /reportes/tendencia:
+    get:
+      description: Serie de los ultimos meses terminando en el periodo pedido. Los
+        meses sin movimientos salen con ceros.
+      parameters:
+      - description: Mes del 1 al 12 (por defecto, el mes en curso)
+        in: query
+        name: mes
+        type: integer
+      - description: Año de 2000 a 2100 (por defecto, el año en curso)
+        in: query
+        name: anio
+        type: integer
+      - description: Cuantos meses, de 1 a 24 (por defecto 6)
+        in: query
+        name: meses
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.Sobre'
+            - properties:
+                datos:
+                  items:
+                    $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.PuntoTendencia'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+      security:
+      - BearerAuth: []
+      summary: Tendencia mensual
+      tags:
+      - reportes
+  /transacciones:
+    get:
+      description: Listado paginado con filtros. La meta trae pagina, limite, total
+        y total_paginas.
+      parameters:
+      - description: Fecha inicial AAAA-MM-DD
+        in: query
+        name: desde
+        type: string
+      - description: Fecha final AAAA-MM-DD, incluida
+        in: query
+        name: hasta
+        type: string
+      - description: ingreso o gasto
+        enum:
+        - ingreso
+        - gasto
+        in: query
+        name: tipo
+        type: string
+      - description: Filtra por categoria
+        in: query
+        name: categoria_id
+        type: string
+      - description: Filtra por cuenta
+        in: query
+        name: cuenta_id
+        type: string
+      - description: Texto en descripcion o notas
+        in: query
+        name: busqueda
+        type: string
+      - description: Orden del listado
+        enum:
+        - fecha_desc
+        - fecha_asc
+        - monto_desc
+        - monto_asc
+        in: query
+        name: orden
+        type: string
+      - description: Pagina, desde 1
+        in: query
+        name: pagina
+        type: integer
+      - description: Resultados por pagina, de 1 a 100
+        in: query
+        name: limite
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.Sobre'
+            - properties:
+                datos:
+                  items:
+                    $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.Transaccion'
+                  type: array
+                meta:
+                  $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.Meta'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+      security:
+      - BearerAuth: []
+      summary: Listar transacciones
+      tags:
+      - transacciones
+    post:
+      description: Si el gasto deja su categoria al 80% o mas de su presupuesto del
+        mes, la respuesta trae ademas el campo alerta.
+      parameters:
+      - description: Datos del movimiento
+        in: body
+        name: cuerpo
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.PeticionTransaccion'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.Sobre'
+            - properties:
+                datos:
+                  $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.TransaccionCreada'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+      security:
+      - BearerAuth: []
+      summary: Registrar un movimiento
+      tags:
+      - transacciones
+  /transacciones/{id}:
+    delete:
+      description: 'Se borra de verdad: una transaccion no es referencia de nada mas.'
+      parameters:
+      - description: Identificador de 24 caracteres
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Sin contenido
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+      security:
+      - BearerAuth: []
+      summary: Borrar un movimiento
+      tags:
+      - transacciones
+    get:
+      parameters:
+      - description: Identificador de 24 caracteres
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.Sobre'
+            - properties:
+                datos:
+                  $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.Transaccion'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+      security:
+      - BearerAuth: []
+      summary: Obtener una transaccion
+      tags:
+      - transacciones
+    put:
+      description: El tipo tiene que seguir coincidiendo con el de su categoria.
+      parameters:
+      - description: Identificador de 24 caracteres
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Datos del movimiento
+        in: body
+        name: cuerpo
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.PeticionTransaccion'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.Sobre'
+            - properties:
+                datos:
+                  $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.Transaccion'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+      security:
+      - BearerAuth: []
+      summary: Editar un movimiento
+      tags:
+      - transacciones
+  /transacciones/exportar:
+    get:
+      description: Descarga un archivo con los mismos filtros del listado, sin paginar.
+        Las cuentas y categorias salen por nombre.
+      parameters:
+      - description: Fecha inicial AAAA-MM-DD
+        in: query
+        name: desde
+        type: string
+      - description: Fecha final AAAA-MM-DD, incluida
+        in: query
+        name: hasta
+        type: string
+      - description: ingreso o gasto
+        enum:
+        - ingreso
+        - gasto
+        in: query
+        name: tipo
+        type: string
+      - description: Filtra por categoria
+        in: query
+        name: categoria_id
+        type: string
+      - description: Filtra por cuenta
+        in: query
+        name: cuenta_id
+        type: string
+      - description: Texto en descripcion o notas
+        in: query
+        name: busqueda
+        type: string
+      - description: Orden del listado
+        enum:
+        - fecha_desc
+        - fecha_asc
+        - monto_desc
+        - monto_asc
+        in: query
+        name: orden
+        type: string
+      produces:
+      - text/csv
+      responses:
+        "200":
+          description: Archivo CSV
+          schema:
+            type: file
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+      security:
+      - BearerAuth: []
+      summary: Exportar transacciones a CSV
+      tags:
+      - csv
+  /transacciones/importar:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Sube un CSV con las columnas fecha, tipo, cuenta, categoria, monto,
+        descripcion y notas. O entra el archivo completo o no entra nada.
+      parameters:
+      - description: Archivo CSV, maximo 2 MiB
+        in: formData
+        name: archivo
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.Sobre'
+            - properties:
+                datos:
+                  $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.ResultadoImportacion'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+      security:
+      - BearerAuth: []
+      summary: Importar transacciones desde CSV
+      tags:
+      - csv
+produces:
+- application/json
+securityDefinitions:
+  BearerAuth:
+    description: 'Token de acceso con el prefijo. Ejemplo: "Bearer eyJhbGciOi..."'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

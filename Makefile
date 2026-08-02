@@ -11,7 +11,7 @@ MONGO_URI_DEV = mongodb://fintrack_admin:fintrack_dev_2026@localhost:27017/?auth
 MONGOSH = mongosh -u fintrack_admin -p fintrack_dev_2026 --authenticationDatabase admin --quiet
 
 .DEFAULT_GOAL := help
-.PHONY: help up down dev test test-integracion lint seed build
+.PHONY: help up down dev test test-integracion lint seed build swagger postman
 
 help: ## Muestra esta ayuda
 	@echo "FinTrack - atajos disponibles:"
@@ -23,6 +23,8 @@ help: ## Muestra esta ayuda
 	@echo "  make lint    Corre go vet y golangci-lint                        [fase 2]"
 	@echo "  make seed    Recrea el esquema y carga los datos semilla"
 	@echo "  make build   Compila el backend y el frontend                    [fase 7]"
+	@echo "  make swagger Regenera la especificacion OpenAPI de backend/docs"
+	@echo "  make postman Corre la coleccion de Postman con newman (necesita la API viva)"
 
 up: ## Levanta MongoDB en segundo plano
 	$(COMPOSE_DEV) up -d
@@ -35,11 +37,11 @@ dev: up ## Levanta Mongo y arranca la API con recarga manual
 	cd backend && go run ./cmd/api
 
 test: ## Pruebas del backend (las de integracion se saltan solas)
-	cd backend && go test ./... -coverpkg=./... -coverprofile=coverage.out
+	cd backend && go test ./... -coverpkg=./cmd/...,./internal/... -coverprofile=coverage.out
 	@cd backend && go tool cover -func=coverage.out | tail -1
 
 test-integracion: up ## Todas las pruebas, incluidas las que necesitan MongoDB
-	cd backend && MONGO_URI_PRUEBAS="$(MONGO_URI_DEV)" go test ./... -coverpkg=./... -coverprofile=coverage.out
+	cd backend && MONGO_URI_PRUEBAS="$(MONGO_URI_DEV)" go test ./... -coverpkg=./cmd/...,./internal/... -coverprofile=coverage.out
 	@cd backend && go tool cover -func=coverage.out | tail -1
 
 lint: ## Analisis estatico del backend
@@ -53,3 +55,11 @@ seed: ## Recrea el esquema y carga los datos semilla (idempotente)
 build: ## Compila el binario de la API y el bundle del frontend
 	cd backend && go build -o bin/api ./cmd/api
 	cd frontend && npm ci && npm run build
+
+swagger: ## Regenera backend/docs a partir de las anotaciones de los handlers
+	@command -v swag >/dev/null || go install github.com/swaggo/swag/cmd/swag@latest
+	cd backend && swag init -g cmd/api/main.go -o docs --parseDependency --parseInternal
+	@echo "Listo. Levanta la API y abre http://localhost:8080/swagger"
+
+postman: ## Corre la coleccion de Postman contra la API que ya este corriendo
+	npx --yes newman run postman/FinTrack.postman_collection.json -e postman/FinTrack.postman_environment.json

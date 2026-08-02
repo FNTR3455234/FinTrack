@@ -31,6 +31,16 @@ func NuevoCuentas(servicio ServicioCuentas) *Cuentas {
 
 // Listar atiende GET /cuentas. Con ?incluir_archivadas=true devuelve tambien
 // las archivadas.
+//
+//	@Summary		Listar cuentas
+//	@Description	Solo las del usuario del token.
+//	@Tags			cuentas
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			incluir_archivadas	query	bool	false	"Incluye tambien las archivadas"
+//	@Success		200	{object}	respuestas.Sobre{datos=[]modelos.Cuenta}
+//	@Failure		401	{object}	respuestas.SobreError
+//	@Router			/cuentas [get]
 func (h *Cuentas) Listar(c *gin.Context) {
 	usuarioID, ok := usuarioAutenticado(c)
 	if !ok {
@@ -46,6 +56,18 @@ func (h *Cuentas) Listar(c *gin.Context) {
 }
 
 // Obtener atiende GET /cuentas/:id.
+//
+//	@Summary		Obtener una cuenta
+//	@Description	Responde 404 si el identificador es de otro usuario: un 403 confirmaria que existe.
+//	@Tags			cuentas
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id	path	string	true	"Identificador de 24 caracteres"
+//	@Success		200	{object}	respuestas.Sobre{datos=modelos.Cuenta}
+//	@Failure		400	{object}	respuestas.SobreError
+//	@Failure		401	{object}	respuestas.SobreError
+//	@Failure		404	{object}	respuestas.SobreError
+//	@Router			/cuentas/{id} [get]
 func (h *Cuentas) Obtener(c *gin.Context) {
 	usuarioID, ok := usuarioAutenticado(c)
 	if !ok {
@@ -65,6 +87,16 @@ func (h *Cuentas) Obtener(c *gin.Context) {
 }
 
 // Crear atiende POST /cuentas.
+//
+//	@Summary		Crear una cuenta
+//	@Tags			cuentas
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			cuerpo	body	modelos.PeticionCuenta	true	"Datos de la cuenta"
+//	@Success		201	{object}	respuestas.Sobre{datos=modelos.Cuenta}
+//	@Failure		400	{object}	respuestas.SobreError
+//	@Failure		401	{object}	respuestas.SobreError
+//	@Router			/cuentas [post]
 func (h *Cuentas) Crear(c *gin.Context) {
 	usuarioID, ok := usuarioAutenticado(c)
 	if !ok {
@@ -85,6 +117,18 @@ func (h *Cuentas) Crear(c *gin.Context) {
 }
 
 // Actualizar atiende PUT /cuentas/:id.
+//
+//	@Summary		Editar una cuenta
+//	@Tags			cuentas
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id	path	string	true	"Identificador de 24 caracteres"
+//	@Param			cuerpo	body	modelos.PeticionCuenta	true	"Datos de la cuenta"
+//	@Success		200	{object}	respuestas.Sobre{datos=modelos.Cuenta}
+//	@Failure		400	{object}	respuestas.SobreError
+//	@Failure		401	{object}	respuestas.SobreError
+//	@Failure		404	{object}	respuestas.SobreError
+//	@Router			/cuentas/{id} [put]
 func (h *Cuentas) Actualizar(c *gin.Context) {
 	usuarioID, ok := usuarioAutenticado(c)
 	if !ok {
@@ -109,6 +153,19 @@ func (h *Cuentas) Actualizar(c *gin.Context) {
 }
 
 // Eliminar atiende DELETE /cuentas/:id.
+//
+//	@Summary		Borrar una cuenta
+//	@Description	Responde 409 CUENTA_CON_TRANSACCIONES si tiene movimientos. No hay borrado en cascada: archivala en su lugar.
+//	@Tags			cuentas
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id	path	string	true	"Identificador de 24 caracteres"
+//	@Success		204	{string}	string	"Sin contenido"
+//	@Failure		400	{object}	respuestas.SobreError
+//	@Failure		401	{object}	respuestas.SobreError
+//	@Failure		404	{object}	respuestas.SobreError
+//	@Failure		409	{object}	respuestas.SobreError
+//	@Router			/cuentas/{id} [delete]
 func (h *Cuentas) Eliminar(c *gin.Context) {
 	usuarioID, ok := usuarioAutenticado(c)
 	if !ok {

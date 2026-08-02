@@ -7,7 +7,13 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	archivosSwagger "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 
+	// La especificacion OpenAPI la genera swaggo a partir de las anotaciones de
+	// los handlers (`make swagger`). Se importa solo por su init(), que la
+	// registra para que la sirva /swagger.
+	_ "github.com/FNTR3455234/FinTrack/backend/docs"
 	"github.com/FNTR3455234/FinTrack/backend/internal/config"
 	"github.com/FNTR3455234/FinTrack/backend/internal/errores"
 	"github.com/FNTR3455234/FinTrack/backend/internal/handlers"
@@ -37,6 +43,7 @@ type Dependencias struct {
 	Transacciones handlers.ServicioTransacciones
 	Presupuestos  handlers.ServicioPresupuestos
 	Reportes      handlers.ServicioReportes
+	CSV           handlers.ServicioCSV
 }
 
 // Configurar devuelve el router listo para servir.
@@ -60,6 +67,7 @@ func Configurar(cfg *config.Config, deps Dependencias) *gin.Engine {
 	router.Use(middleware.Recuperacion())
 	router.Use(middleware.CORS(cfg.CORSOrigenes))
 
+	registrarSwagger(router)
 	registrarErroresDeRuta(router)
 
 	v1 := router.Group("/api/v1")
@@ -85,6 +93,12 @@ func Configurar(cfg *config.Config, deps Dependencias) *gin.Engine {
 			registrarCRUD(privadas, "/categorias", crudDe(handlers.NuevoCategorias(deps.Categorias)))
 			registrarCRUD(privadas, "/transacciones", crudDe(handlers.NuevoTransacciones(deps.Transacciones)))
 			registrarCRUD(privadas, "/presupuestos", crudDe(handlers.NuevoPresupuestos(deps.Presupuestos)))
+
+			// Conviven con /transacciones/:id: Gin prefiere el tramo estatico
+			// sobre el parametro, asi que "exportar" nunca se toma por un id.
+			archivos := handlers.NuevoCSV(deps.CSV)
+			privadas.GET("/transacciones/exportar", archivos.Exportar)
+			privadas.POST("/transacciones/importar", archivos.Importar)
 
 			registrarReportes(privadas, handlers.NuevoReportes(deps.Reportes))
 		}
@@ -124,6 +138,20 @@ func registrarCRUD(grupo *gin.RouterGroup, base string, h crud) {
 	grupo.GET(base+"/:id", h.obtener)
 	grupo.PUT(base+"/:id", h.actualizar)
 	grupo.DELETE(base+"/:id", h.eliminar)
+}
+
+// registrarSwagger publica la documentacion interactiva en /swagger/index.html.
+//
+// Va fuera de /api/v1 y sin autenticacion: describe la API, no expone datos.
+// Aun asi, en un despliegue publico de verdad conviene dejarla solo en los
+// entornos internos; queda anotado en backend/README.md.
+func registrarSwagger(router *gin.Engine) {
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(archivosSwagger.Handler))
+
+	// Atajo para no tener que escribir /index.html a mano.
+	router.GET("/swagger", func(c *gin.Context) {
+		c.Redirect(http.StatusMovedPermanently, "/swagger/index.html")
+	})
 }
 
 // registrarReportes engancha las consultas de analisis.

@@ -25,6 +25,23 @@ import (
 // antes de cerrar a la fuerza.
 const tiempoApagado = 10 * time.Second
 
+// Informacion general de la especificacion OpenAPI. La lee swaggo para generar
+// backend/docs, que es lo que sirve /swagger. Ver `make swagger`.
+//
+//	@title						FinTrack API
+//	@version					0.1.0
+//	@description				API REST de finanzas personales: cuentas, categorias, transacciones, presupuestos y reportes.
+//	@description				Todos los datos pertenecen a un usuario. El identificador del dueño sale siempre del token, nunca del cuerpo de la peticion.
+//	@license.name				MIT
+//	@license.url				https://opensource.org/licenses/MIT
+//	@host						localhost:8080
+//	@BasePath					/api/v1
+//	@accept						json
+//	@produce					json
+//	@securityDefinitions.apikey	BearerAuth
+//	@in							header
+//	@name						Authorization
+//	@description				Token de acceso con el prefijo. Ejemplo: "Bearer eyJhbGciOi..."
 func main() {
 	cfg, err := config.Cargar()
 	if err != nil {
@@ -76,6 +93,7 @@ func main() {
 			Transacciones: servicios.NuevoTransacciones(repoTransacciones, repoCuentas, repoCategorias, repoReportes),
 			Presupuestos:  servicios.NuevoPresupuestos(repoPresupuestos, repoCategorias),
 			Reportes:      servicios.NuevoReportes(repoReportes),
+			CSV:           servicios.NuevoCSV(repoTransacciones, repoCuentas, repoCategorias),
 		}),
 		// Sin estos limites una conexion lenta puede quedarse tomada de forma
 		// indefinida.

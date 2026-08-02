@@ -31,6 +31,25 @@ func NuevoTransacciones(servicio ServicioTransacciones) *Transacciones {
 
 // Listar atiende GET /transacciones con todos sus filtros:
 // desde, hasta, tipo, categoria_id, cuenta_id, busqueda, pagina, limite y orden.
+//
+//	@Summary		Listar transacciones
+//	@Description	Listado paginado con filtros. La meta trae pagina, limite, total y total_paginas.
+//	@Tags			transacciones
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			desde	query	string	false	"Fecha inicial AAAA-MM-DD"
+//	@Param			hasta	query	string	false	"Fecha final AAAA-MM-DD, incluida"
+//	@Param			tipo	query	string	false	"ingreso o gasto"	Enums(ingreso, gasto)
+//	@Param			categoria_id	query	string	false	"Filtra por categoria"
+//	@Param			cuenta_id	query	string	false	"Filtra por cuenta"
+//	@Param			busqueda	query	string	false	"Texto en descripcion o notas"
+//	@Param			orden	query	string	false	"Orden del listado"	Enums(fecha_desc, fecha_asc, monto_desc, monto_asc)
+//	@Param			pagina	query	int	false	"Pagina, desde 1"
+//	@Param			limite	query	int	false	"Resultados por pagina, de 1 a 100"
+//	@Success		200	{object}	respuestas.Sobre{datos=[]modelos.Transaccion,meta=respuestas.Meta}
+//	@Failure		400	{object}	respuestas.SobreError
+//	@Failure		401	{object}	respuestas.SobreError
+//	@Router			/transacciones [get]
 func (h *Transacciones) Listar(c *gin.Context) {
 	usuarioID, ok := usuarioAutenticado(c)
 	if !ok {
@@ -50,6 +69,17 @@ func (h *Transacciones) Listar(c *gin.Context) {
 }
 
 // Obtener atiende GET /transacciones/:id.
+//
+//	@Summary		Obtener una transaccion
+//	@Tags			transacciones
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id	path	string	true	"Identificador de 24 caracteres"
+//	@Success		200	{object}	respuestas.Sobre{datos=modelos.Transaccion}
+//	@Failure		400	{object}	respuestas.SobreError
+//	@Failure		401	{object}	respuestas.SobreError
+//	@Failure		404	{object}	respuestas.SobreError
+//	@Router			/transacciones/{id} [get]
 func (h *Transacciones) Obtener(c *gin.Context) {
 	usuarioID, ok := usuarioAutenticado(c)
 	if !ok {
@@ -66,69 +96,4 @@ func (h *Transacciones) Obtener(c *gin.Context) {
 		return
 	}
 	respuestas.OK(c, transaccion)
-}
-
-// Crear atiende POST /transacciones.
-//
-// La respuesta trae la transaccion y, cuando el gasto deja su categoria cerca
-// del limite del mes, un campo "alerta" con el estado del presupuesto.
-func (h *Transacciones) Crear(c *gin.Context) {
-	usuarioID, ok := usuarioAutenticado(c)
-	if !ok {
-		return
-	}
-
-	var peticion modelos.PeticionTransaccion
-	if !enlazar(c, &peticion) {
-		return
-	}
-
-	transaccion, err := h.servicio.Crear(c.Request.Context(), usuarioID, peticion)
-	if err != nil {
-		respuestas.Fallo(c, err)
-		return
-	}
-	respuestas.Creado(c, transaccion)
-}
-
-// Actualizar atiende PUT /transacciones/:id.
-func (h *Transacciones) Actualizar(c *gin.Context) {
-	usuarioID, ok := usuarioAutenticado(c)
-	if !ok {
-		return
-	}
-	id, ok := idDeLaRuta(c)
-	if !ok {
-		return
-	}
-
-	var peticion modelos.PeticionTransaccion
-	if !enlazar(c, &peticion) {
-		return
-	}
-
-	transaccion, err := h.servicio.Actualizar(c.Request.Context(), usuarioID, id, peticion)
-	if err != nil {
-		respuestas.Fallo(c, err)
-		return
-	}
-	respuestas.OK(c, transaccion)
-}
-
-// Eliminar atiende DELETE /transacciones/:id.
-func (h *Transacciones) Eliminar(c *gin.Context) {
-	usuarioID, ok := usuarioAutenticado(c)
-	if !ok {
-		return
-	}
-	id, ok := idDeLaRuta(c)
-	if !ok {
-		return
-	}
-
-	if err := h.servicio.Eliminar(c.Request.Context(), usuarioID, id); err != nil {
-		respuestas.Fallo(c, err)
-		return
-	}
-	respuestas.SinContenido(c)
 }

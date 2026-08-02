@@ -38,4 +38,9 @@ const (
 	CodigoPresupuestoDuplicado      = "PRESUPUESTO_DUPLICADO"
 	CodigoTipoNoCoincide            = "TIPO_NO_COINCIDE"
 	CodigoPeriodoInvalido           = "PERIODO_INVALIDO"
+
+	// Importacion y exportacion CSV (fase 6)
+	CodigoCSVInvalido      = "CSV_INVALIDO"
+	CodigoArchivoRequerido = "ARCHIVO_REQUERIDO"
+	CodigoArchivoMuyGrande = "ARCHIVO_MUY_GRANDE"
 )

@@ -211,6 +211,31 @@ func (r *transaccionesFalso) Eliminar(_ context.Context, usuarioID, id bson.Obje
 	return nil
 }
 
+// Todas es lo que usa la exportacion. Como el doble no imita los filtros de
+// MongoDB, devuelve todo lo del usuario; que el filtro llegue bien a la consulta
+// se comprueba en las pruebas de integracion.
+func (r *transaccionesFalso) Todas(_ context.Context, usuarioID bson.ObjectID, _ modelos.FiltroTransacciones) ([]modelos.Transaccion, error) {
+	transacciones := []modelos.Transaccion{}
+	for _, t := range r.datos {
+		if t.UsuarioID == usuarioID {
+			transacciones = append(transacciones, *t)
+		}
+	}
+	sort.Slice(transacciones, func(i, j int) bool {
+		return transacciones[i].Fecha.After(transacciones[j].Fecha)
+	})
+	return transacciones, nil
+}
+
+func (r *transaccionesFalso) CrearVarias(ctx context.Context, transacciones []modelos.Transaccion) (int, error) {
+	for i := range transacciones {
+		if err := r.Crear(ctx, &transacciones[i]); err != nil {
+			return i, err
+		}
+	}
+	return len(transacciones), nil
+}
+
 func (r *transaccionesFalso) ContarPorCuenta(_ context.Context, usuarioID, cuentaID bson.ObjectID) (int64, error) {
 	var total int64
 	for _, t := range r.datos {

@@ -329,6 +329,85 @@ justificarlas después. Formato por entrada: **decisión, contexto, alternativas
 
 ---
 
+## 023 — La importación de CSV es todo o nada
+
+**Fecha:** 2026-08-02 · **Fase:** 6
+
+- **Contexto:** `POST /transacciones/importar` recibe un archivo con muchas filas y alguna puede
+  venir mal.
+- **Alternativas:**
+  1. Insertar las buenas y reportar las malas. Se descartó: si el usuario corrige el archivo y lo
+     vuelve a subir, las buenas entran **otra vez**. En una app de dinero eso se paga contando dos
+     veces el mismo gasto.
+  2. Usar una transacción de MongoDB. No se puede: el servidor está en modo standalone
+     ([decisión 003](#003--mongodb-standalone-sin-replica-set)).
+- **Decisión:** se valida el archivo **completo** antes de escribir nada. Si una sola fila falla, se
+  responde `400 CSV_INVALIDO` con la lista de errores (fila por fila, con el número que se ve en la
+  hoja de cálculo) y no se guarda ninguna.
+- **Por qué:** sin transacciones multidocumento, validar antes de escribir es la única forma de que
+  el resultado sea "todo" o "nada" y nunca "la mitad". Y reintentar es seguro por construcción.
+- **Contrapartida:** un archivo de 500 filas con una errata no importa nada. Es molesto, pero es
+  predecible; el error dice exactamente qué fila arreglar.
+
+---
+
+## 024 — El CSV lleva nombres, no identificadores, y una marca BOM
+
+**Fecha:** 2026-08-02 · **Fase:** 6
+
+- **Contexto:** el archivo tiene que poder abrirse en Excel y editarse a mano.
+- **Decisiones:**
+  1. Las columnas `cuenta` y `categoria` van por **nombre**. Un `ObjectID` de 24 caracteres no le
+     dice nada a nadie en una hoja de cálculo, y la importación resuelve por nombre (sin distinguir
+     mayúsculas ni espacios de sobra), así que lo que exporta la API se puede volver a importar tal
+     cual.
+  2. El archivo empieza con la **marca BOM** de UTF-8. Excel supone que un `.csv` viene en la
+     codificación del sistema y sin ella parte los acentos (*Educación* se ve como *EducaciÃ³n*).
+     La importación la quita al leer.
+- **Efecto secundario:** si dos categorías se llaman igual salvo por las mayúsculas, una fila no
+  puede saber a cuál se refiere. En vez de elegir una en silencio, se responde un error que lo dice.
+- **Comprobado en:** una prueba de integración exporta con un usuario y vuelve a importar el archivo
+  con otro, sin editarlo, y compara las dos exportaciones.
+
+---
+
+## 025 — Swagger se genera de las anotaciones, y lo generado se versiona
+
+**Fecha:** 2026-08-02 · **Fase:** 6
+
+- **Contexto:** `swaggo` lee comentarios `@Summary`, `@Param`, `@Success`… sobre cada handler y
+  genera `backend/docs/` (`docs.go`, `swagger.json`, `swagger.yaml`).
+- **Decisión:** las anotaciones van **sobre cada handler**, no en un archivo aparte de stubs, y el
+  directorio `backend/docs/` **se versiona** aunque sea código generado.
+- **Por qué:**
+  - Junto al handler, la anotación se actualiza en el mismo cambio que el código. En un archivo
+    aparte se desincroniza en la primera semana.
+  - `internal/rutas` importa `docs` por su `init()`, así que **sin ese directorio el proyecto no
+    compila**. Ignorarlo obligaría a instalar `swag` antes de poder construir, en la máquina de
+    cualquiera y en el CI.
+- **Se regenera con** `make swagger` (instala `swag` si falta).
+- **Nota de despliegue:** `/swagger` se sirve sin autenticación porque describe la API, no expone
+  datos. Aun así, en un despliegue público conviene dejarlo solo en entornos internos.
+
+---
+
+## 026 — Un error al validar el periodo de un reporte se rechaza; los tokens de refresco no se renuevan
+
+**Fecha:** 2026-08-02 · **Fase:** 6
+
+- **Contexto:** al escribir la colección de Postman, una aserción falló: `POST /auth/refresh` no
+  devolvía `token_refresco`.
+- **Hallazgo:** no era un fallo de la API, sino de la documentación. `/auth/refresh` devuelve
+  `RespuestaRefresco` —solo un token de acceso nuevo— porque el de refresco sigue siendo válido
+  hasta que expire a los 7 días. La anotación de Swagger decía `RespuestaSesion`.
+- **Decisión:** se corrigió la anotación y se dejó la aserción al revés: la prueba de Postman ahora
+  comprueba que `token_refresco` **no** viene en la respuesta.
+- **Por qué queda anotado:** es el ejemplo de para qué sirve la colección. Las pruebas de Go
+  comprueban el comportamiento; la colección comprobó que lo que la API *dice* de sí misma coincide
+  con lo que *hace*.
+
+---
+
 ## Pendientes anotados (se resuelven en su fase)
 
 - **Fase 3 — Refresh token sin estado:** el refresh token no se guarda en la base, así que se puede
@@ -341,7 +420,9 @@ justificarlas después. Formato por entrada: **decisión, contexto, alternativas
   responde `409` y el cliente debe archivar (`archivada: true`) en lugar de borrar. Sin cascada.
 - ~~**Fase 5 — Zona horaria**~~ → resuelto en la [decisión 019](#019--la-fecha-de-un-movimiento-es-un-día-anclado-a-las-1200-utc).
 - ~~**Fase 5 — Saldo de cuentas**~~ → resuelto en la [decisión 020](#020--el-saldo-de-una-cuenta-se-calcula-no-se-guarda).
-- **Fase 6 — Alertas solo al crear:** `POST /transacciones` avisa si el gasto rebasa el presupuesto,
-  pero `PUT` no. Editar el monto de un gasto también puede cruzar el umbral. Se decidirá si el
-  aviso se extiende a la edición o si el frontend consulta `/reportes/estado-presupuestos` al
-  guardar.
+- **Fase 7 — Alertas solo al crear:** `POST /transacciones` avisa si el gasto rebasa el presupuesto,
+  pero `PUT` no. Editar el monto de un gasto también puede cruzar el umbral. Se resuelve en el
+  frontend consultando `/reportes/estado-presupuestos` después de guardar; si no basta, se extiende
+  el campo `alerta` al `PUT`.
+- **Fase 7 — Importación sin vista previa:** el CSV se valida entero y se guarda o se rechaza en la
+  misma petición. Falta decidir si el frontend enseña antes qué se va a importar.

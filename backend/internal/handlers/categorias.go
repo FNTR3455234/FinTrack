@@ -32,6 +32,18 @@ func NuevoCategorias(servicio ServicioCategorias) *Categorias {
 
 // Listar atiende GET /categorias. Acepta ?tipo=ingreso|gasto y
 // ?incluir_archivadas=true.
+//
+//	@Summary		Listar categorias
+//	@Description	Solo las del usuario del token.
+//	@Tags			categorias
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			tipo	query	string	false	"Filtra por tipo"	Enums(ingreso, gasto)
+//	@Param			incluir_archivadas	query	bool	false	"Incluye tambien las archivadas"
+//	@Success		200	{object}	respuestas.Sobre{datos=[]modelos.Categoria}
+//	@Failure		400	{object}	respuestas.SobreError
+//	@Failure		401	{object}	respuestas.SobreError
+//	@Router			/categorias [get]
 func (h *Categorias) Listar(c *gin.Context) {
 	usuarioID, ok := usuarioAutenticado(c)
 	if !ok {
@@ -54,6 +66,17 @@ func (h *Categorias) Listar(c *gin.Context) {
 }
 
 // Obtener atiende GET /categorias/:id.
+//
+//	@Summary		Obtener una categoria
+//	@Tags			categorias
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id	path	string	true	"Identificador de 24 caracteres"
+//	@Success		200	{object}	respuestas.Sobre{datos=modelos.Categoria}
+//	@Failure		400	{object}	respuestas.SobreError
+//	@Failure		401	{object}	respuestas.SobreError
+//	@Failure		404	{object}	respuestas.SobreError
+//	@Router			/categorias/{id} [get]
 func (h *Categorias) Obtener(c *gin.Context) {
 	usuarioID, ok := usuarioAutenticado(c)
 	if !ok {
@@ -73,6 +96,16 @@ func (h *Categorias) Obtener(c *gin.Context) {
 }
 
 // Crear atiende POST /categorias.
+//
+//	@Summary		Crear una categoria
+//	@Tags			categorias
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			cuerpo	body	modelos.PeticionCategoria	true	"Datos de la categoria"
+//	@Success		201	{object}	respuestas.Sobre{datos=modelos.Categoria}
+//	@Failure		400	{object}	respuestas.SobreError
+//	@Failure		401	{object}	respuestas.SobreError
+//	@Router			/categorias [post]
 func (h *Categorias) Crear(c *gin.Context) {
 	usuarioID, ok := usuarioAutenticado(c)
 	if !ok {
@@ -93,6 +126,20 @@ func (h *Categorias) Crear(c *gin.Context) {
 }
 
 // Actualizar atiende PUT /categorias/:id.
+//
+//	@Summary		Editar una categoria
+//	@Description	No se puede cambiar el tipo de una categoria que ya tiene movimientos (409).
+//	@Tags			categorias
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id	path	string	true	"Identificador de 24 caracteres"
+//	@Param			cuerpo	body	modelos.PeticionCategoria	true	"Datos de la categoria"
+//	@Success		200	{object}	respuestas.Sobre{datos=modelos.Categoria}
+//	@Failure		400	{object}	respuestas.SobreError
+//	@Failure		401	{object}	respuestas.SobreError
+//	@Failure		404	{object}	respuestas.SobreError
+//	@Failure		409	{object}	respuestas.SobreError
+//	@Router			/categorias/{id} [put]
 func (h *Categorias) Actualizar(c *gin.Context) {
 	usuarioID, ok := usuarioAutenticado(c)
 	if !ok {
@@ -117,6 +164,19 @@ func (h *Categorias) Actualizar(c *gin.Context) {
 }
 
 // Eliminar atiende DELETE /categorias/:id.
+//
+//	@Summary		Borrar una categoria
+//	@Description	Responde 409 si tiene movimientos o presupuestos.
+//	@Tags			categorias
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id	path	string	true	"Identificador de 24 caracteres"
+//	@Success		204	{string}	string	"Sin contenido"
+//	@Failure		400	{object}	respuestas.SobreError
+//	@Failure		401	{object}	respuestas.SobreError
+//	@Failure		404	{object}	respuestas.SobreError
+//	@Failure		409	{object}	respuestas.SobreError
+//	@Router			/categorias/{id} [delete]
 func (h *Categorias) Eliminar(c *gin.Context) {
 	usuarioID, ok := usuarioAutenticado(c)
 	if !ok {

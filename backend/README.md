@@ -13,11 +13,16 @@ API REST de FinTrack escrita en **Go** con **Gin** y el driver oficial de MongoD
 | [`github.com/gin-gonic/gin`](https://github.com/gin-gonic/gin) | Router y manejo de HTTP |
 | [`go.mongodb.org/mongo-driver/v2`](https://github.com/mongodb/mongo-go-driver) | Driver oficial de MongoDB |
 | [`github.com/joho/godotenv`](https://github.com/joho/godotenv) | Carga del archivo `.env` en desarrollo |
+| [`github.com/golang-jwt/jwt/v5`](https://github.com/golang-jwt/jwt) | Firma y validación de los tokens |
+| [`golang.org/x/crypto/bcrypt`](https://pkg.go.dev/golang.org/x/crypto/bcrypt) | Hash de contraseñas |
+| [`github.com/go-playground/validator/v10`](https://github.com/go-playground/validator) | Validación de los cuerpos de petición |
+| [`github.com/swaggo/swag`](https://github.com/swaggo/swag) + [`gin-swagger`](https://github.com/swaggo/gin-swagger) | Genera y sirve la especificación OpenAPI |
 | [`github.com/stretchr/testify`](https://github.com/stretchr/testify) | Aserciones en las pruebas |
 | `log/slog` (biblioteca estándar) | Bitácora estructurada |
+| `encoding/csv` (biblioteca estándar) | Exportación e importación de movimientos |
 
-Pendientes de las fases siguientes: `golang-jwt/jwt/v5` y `golang.org/x/crypto/bcrypt` (fase 3),
-`go-playground/validator/v10` (fase 4), `swaggo/swag` + `swaggo/gin-swagger` (fase 6).
+No hay ninguna otra: los middlewares (bitácora, recuperación, CORS, límite de peticiones) están
+escritos a mano ([decisión 010](../docs/decisiones.md)).
 
 ## Requisitos
 
@@ -146,6 +151,9 @@ texto del mensaje. El catálogo completo está en
 | 🔒 GET | `/api/v1/reportes/resumen` | Cifras del mes para el tablero |
 | 🔒 GET | `/api/v1/reportes/tendencia` | Serie mensual de ingresos y gastos |
 | 🔒 GET | `/api/v1/reportes/saldos` | Saldo actual de cada cuenta |
+| 🔒 GET | `/api/v1/transacciones/exportar` | Descarga los movimientos como CSV |
+| 🔒 POST | `/api/v1/transacciones/importar` | Carga movimientos desde un CSV |
+| GET | `/swagger` | Documentación interactiva (OpenAPI) |
 
 El resto de los endpoints llega en las fases 5 y 6.
 
@@ -440,6 +448,90 @@ la forma de la serie.
 segunda fuente de verdad que se desincroniza en cuanto una transacción se edita o se borra
 ([decisión 020](../docs/decisiones.md)).
 
+## Exportar e importar CSV
+
+Las dos mitades encajan: **lo que exporta la API se puede volver a importar sin editarlo**.
+
+```bash
+# Exportar (acepta los mismos filtros del listado, sin paginar)
+curl -H "Authorization: Bearer $TOKEN" -O -J \
+  "http://localhost:8080/api/v1/transacciones/exportar?desde=2026-07-01&hasta=2026-07-31"
+
+# Importar
+curl -H "Authorization: Bearer $TOKEN" -F "archivo=@movimientos.csv" \
+  http://localhost:8080/api/v1/transacciones/importar
+```
+
+Columnas: `fecha,tipo,cuenta,categoria,monto,descripcion,notas`
+
+```csv
+fecha,tipo,cuenta,categoria,monto,descripcion,notas
+2026-07-03,gasto,BBVA Debito,Supermercado,850.50,Despensa,con cupon
+2026-07-04,ingreso,BBVA Debito,Nomina,20000.00,Quincena,
+```
+
+Detalles que importan al abrirlo en Excel:
+
+- La cuenta y la categoría van **por nombre**, no por identificador: un `ObjectID` de 24 caracteres
+  no le sirve a nadie en una hoja de cálculo. Al importar se resuelven por nombre, sin distinguir
+  mayúsculas ni espacios de sobra.
+- El archivo empieza con la **marca BOM** de UTF-8, sin la cual Excel parte los acentos. La
+  importación la quita al leer.
+- El orden de las columnas del encabezado **da igual**, pero tienen que estar todas.
+- Al importar se aceptan las comas de millar y el signo de pesos (`"$1,250.50"`), que es lo que
+  escribe Excel al dar formato de moneda. Lo que **no** se acepta es un monto negativo: el signo lo
+  decide el `tipo`.
+
+### O entra el archivo completo o no entra nada
+
+Si una sola fila falla, se responde `400 CSV_INVALIDO` y **no se guarda ninguna**:
+
+```json
+{
+  "error": {
+    "codigo": "CSV_INVALIDO",
+    "mensaje": "El archivo tiene filas que no se pueden importar. No se guardo ninguna.",
+    "detalles": [
+      "fila 3: la cuenta \"Cuenta fantasma\" no existe",
+      "fila 4: la fecha \"03/08/2026\" no tiene el formato AAAA-MM-DD"
+    ]
+  }
+}
+```
+
+Se validan **todas** las filas antes de escribir nada, y se reportan todos los errores de una vez.
+La razón es que MongoDB está en modo standalone y no hay transacciones multidocumento: insertar
+sobre la marcha dejaría archivos importados por la mitad, y reintentar duplicaría lo que sí entró
+([decisión 023](../docs/decisiones.md)). El número de fila es el que se ve en la hoja de cálculo.
+
+Las reglas de cada fila son **exactamente** las de `POST /transacciones`: mismo rango de monto,
+misma longitud de descripción, mismo cruce de tipo con la categoría. Una vía de entrada que valide
+menos que la otra sería una puerta trasera al modelo de datos.
+
+Límites: 2 MiB por archivo, 5 000 filas al importar y 10 000 al exportar.
+
+## Documentación interactiva (Swagger)
+
+Con la API corriendo: **[http://localhost:8080/swagger](http://localhost:8080/swagger)**.
+
+Son **33 operaciones sobre 20 rutas**, con sus parámetros, sus cuerpos de ejemplo y los códigos de
+error que puede devolver cada una. El botón **Authorize** acepta el token de acceso y a partir de
+ahí se puede probar cualquier endpoint desde el navegador.
+
+La especificación no se escribe a mano: la genera [swaggo](https://github.com/swaggo/swag) leyendo
+las anotaciones que hay **sobre cada handler**.
+
+```bash
+make swagger    # Windows:  .\make.ps1 swagger
+```
+
+`backend/docs/` se versiona aunque sea código generado, porque `internal/rutas` lo importa por su
+`init()`: sin ese directorio el proyecto no compila, y ignorarlo obligaría a instalar `swag` antes
+de poder construir ([decisión 025](../docs/decisiones.md)).
+
+`/swagger` va fuera de `/api/v1` y sin autenticación: describe la API, no expone datos. En un
+despliegue público conviene dejarlo solo en entornos internos.
+
 ## Autenticación
 
 Dos tokens, firmados con **secretos distintos**:
@@ -549,7 +641,7 @@ MONGO_URI_PRUEBAS="mongodb://fintrack_admin:fintrack_dev_2026@localhost:27017/?a
   go test ./internal/rutas/... -v
 ```
 
-**Cobertura total: 83.7 %**, con las pruebas de integración corriendo:
+**Cobertura total: 84.1 %**, con las pruebas de integración corriendo:
 
 | Paquete | Cobertura |
 |---|---|
@@ -558,11 +650,17 @@ MONGO_URI_PRUEBAS="mongodb://fintrack_admin:fintrack_dev_2026@localhost:27017/?a
 | `internal/config` | 93.5 % |
 | `internal/modelos` | 90.9 % |
 | `internal/db` | 90.0 % |
-| `internal/servicios` | 89.4 % |
-| `internal/repositorios` | 85.8 % |
-| `internal/handlers` | 79.3 % |
+| `internal/servicios` | 89.3 % |
+| `internal/repositorios` | 85.2 % |
+| `internal/handlers` | 79.1 % |
 
-Medidos con `-coverpkg=./...`. Sin esa bandera, `handlers` y `repositorios` darían un número mucho
-más bajo: casi todo su código lo ejercitan las pruebas de `internal/rutas`, y por defecto Go solo
-cuenta la cobertura que produce el paquete que se está probando. Lo que baja de `cmd/api` (0 %) es
-el cableado y el apagado ordenado, que se comprueban a mano mandando una señal real al binario.
+Medidos con `-coverpkg=./cmd/...,./internal/...`. Sin esa bandera, `handlers` y `repositorios`
+darían un número mucho más bajo: casi todo su código lo ejercitan las pruebas de `internal/rutas`,
+y por defecto Go solo cuenta la cobertura que produce el paquete que se está probando. `docs/` queda
+fuera de la medición porque es código generado. Lo que baja de `cmd/api` (0 %) es el cableado y el
+apagado ordenado, que se comprueban a mano mandando una señal real al binario.
+
+Además, la [colección de Postman](../postman/README.md) corre **41 peticiones con 105 aserciones**
+contra la API viva (`make postman`). Las pruebas de Go comprueban el comportamiento; la colección
+comprueba que lo que la API dice de sí misma en Swagger coincide con lo que hace — de hecho así se
+encontró que `/auth/refresh` estaba mal documentado ([decisión 026](../docs/decisiones.md)).

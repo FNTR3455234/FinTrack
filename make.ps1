@@ -39,6 +39,8 @@ function Invoke-Ayuda {
     Write-Host "  .\make.ps1 lint    Corre go vet y golangci-lint                        [fase 2]"
     Write-Host "  .\make.ps1 seed    Recrea el esquema y carga los datos semilla"
     Write-Host "  .\make.ps1 build   Compila el backend y el frontend                    [fase 7]"
+    Write-Host "  .\make.ps1 swagger Regenera la especificacion OpenAPI de backend/docs"
+    Write-Host "  .\make.ps1 postman Corre la coleccion de Postman con newman (necesita la API viva)"
 }
 
 function Invoke-Up {
@@ -73,7 +75,7 @@ function Invoke-Test {
     # Las pruebas de integracion se saltan solas al no estar MONGO_URI_PRUEBAS.
     Push-Location "$raiz\backend"
     try {
-        & go test ./... "-coverpkg=./..." "-coverprofile=coverage.out"
+        & go test ./... "-coverpkg=./cmd/...,./internal/..." "-coverprofile=coverage.out"
         Verificar "pruebas del backend"
         MostrarCobertura
     } finally { Pop-Location }
@@ -85,7 +87,7 @@ function Invoke-TestIntegracion {
     Push-Location "$raiz\backend"
     try {
         $env:MONGO_URI_PRUEBAS = "mongodb://fintrack_admin:fintrack_dev_2026@localhost:27017/?authSource=admin"
-        & go test ./... "-coverpkg=./..." "-coverprofile=coverage.out"
+        & go test ./... "-coverpkg=./cmd/...,./internal/..." "-coverprofile=coverage.out"
         Verificar "pruebas del backend"
         MostrarCobertura
     } finally {
@@ -129,6 +131,31 @@ function Invoke-Build {
     } finally { Pop-Location }
 }
 
+function Invoke-Swagger {
+    # swag lee las anotaciones de los handlers y regenera backend/docs, que es lo
+    # que sirve /swagger. Si no esta instalado, se instala en GOPATH/bin.
+    $swag = Join-Path (& go env GOPATH) "bin\swag.exe"
+    if (-not (Test-Path $swag)) {
+        Write-Host "Instalando swag..."
+        & go install github.com/swaggo/swag/cmd/swag@latest
+        Verificar "instalar swag"
+    }
+    Push-Location "$raiz\backend"
+    try {
+        & $swag init -g cmd/api/main.go -o docs --parseDependency --parseInternal
+        Verificar "generar la especificacion OpenAPI"
+    } finally { Pop-Location }
+    Write-Host "Listo. Levanta la API y abre http://localhost:8080/swagger"
+}
+
+function Invoke-Postman {
+    # newman es el ejecutor de colecciones de Postman en linea de comandos.
+    # La API tiene que estar corriendo y la semilla cargada.
+    & npx --yes newman run "$raiz\postman\FinTrack.postman_collection.json" `
+        -e "$raiz\postman\FinTrack.postman_environment.json"
+    Verificar "correr la coleccion de Postman"
+}
+
 switch ($Target.ToLower()) {
     "help"  { Invoke-Ayuda }
     "up"    { Invoke-Up }
@@ -139,6 +166,8 @@ switch ($Target.ToLower()) {
     "lint"  { Invoke-Lint }
     "seed"  { Invoke-Seed }
     "build" { Invoke-Build }
+    "swagger" { Invoke-Swagger }
+    "postman" { Invoke-Postman }
     default {
         Write-Host "Target desconocido: $Target"
         Invoke-Ayuda

@@ -3,7 +3,7 @@
 Aplicación web de finanzas personales y presupuestos: registra tus ingresos y gastos, organízalos
 por cuentas y categorías, ponles un límite mensual y mira a dónde se te va el dinero.
 
-> **Estado:** en desarrollo. Fases 0 a 5 de 10 completadas — ver la [tabla de avance](#avance-por-fases).
+> **Estado:** en desarrollo. Fases 0 a 6 de 10 completadas — ver la [tabla de avance](#avance-por-fases).
 
 ## Stack
 
@@ -54,8 +54,17 @@ Los mismos targets existen en `Makefile` (Linux/macOS/CI) y en `make.ps1` (Windo
 | `make test` | Pruebas de Go con cobertura | fase 3 |
 | `make test-integracion` | Todas las pruebas, incluidas las que usan MongoDB | fase 4 |
 | `make build` | Compila backend y frontend | fase 7 |
+| `make swagger` | Regenera la especificación OpenAPI | fase 6 |
+| `make postman` | Corre la colección de Postman con Newman | fase 6 |
 
 `make help` (o `.\make.ps1`) lista todo.
+
+## Documentación de la API
+
+Con la API corriendo (`make dev`), la referencia interactiva está en
+**<http://localhost:8080/swagger>**: 33 operaciones con sus parámetros, sus cuerpos de ejemplo y sus
+códigos de error. El botón *Authorize* acepta el token y deja probar cualquier endpoint desde el
+navegador.
 
 ## Documentación
 
@@ -72,7 +81,7 @@ Los mismos targets existen en `Makefile` (Linux/macOS/CI) y en `make.ps1` (Windo
 | 1 | Base de datos: modelo, scripts de creación, semilla y respaldo | [`database/README.md`](database/README.md) ✅ |
 | 2 | Backend: API REST en Go | [`backend/README.md`](backend/README.md) ✅ |
 | 3 | Frontend: cliente en React | `frontend/README.md` _(fase 7)_ |
-| 4 | Pruebas: colección de Postman | `postman/README.md` _(fase 6)_ |
+| 4 | Pruebas: colección de Postman | [`postman/README.md`](postman/README.md) ✅ |
 
 ## Avance por fases
 
@@ -84,7 +93,7 @@ Los mismos targets existen en `Makefile` (Linux/macOS/CI) y en `make.ps1` (Windo
 | 3 | Autenticación: registro, login, refresh, perfil, rate limit | ✅ |
 | 4 | CRUD de cuentas, categorías y transacciones con filtros y paginación | ✅ |
 | 5 | Presupuestos, consultas relacionales, resumen, tendencia y alertas | ✅ |
-| 6 | Exportar/importar CSV, Swagger, colección de Postman | ⏳ |
+| 6 | Exportar/importar CSV, Swagger, colección de Postman | ✅ |
 | 7 | Frontend completo | ⏳ |
 | 8 | Dockerfiles, Compose completo, CI, arquitectura | ⏳ |
 | 9 | Metas de ahorro | ⏳ |

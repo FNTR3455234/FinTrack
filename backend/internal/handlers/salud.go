@@ -32,6 +32,14 @@ type EstadoSalud struct {
 //
 // Devuelve 200 si todo responde y 503 si la base no contesta, para que un
 // orquestador (Docker, un balanceador) pueda decidir si mandarle trafico.
+//
+//	@Summary		Estado del servicio
+//	@Description	Responde 200 si la API y MongoDB estan vivos, y 503 si la base no contesta. No pide token: lo consulta el healthcheck de Docker.
+//	@Tags			salud
+//	@Produce		json
+//	@Success		200	{object}	respuestas.Sobre{datos=handlers.EstadoSalud}
+//	@Failure		503	{object}	respuestas.SobreError
+//	@Router			/health [get]
 func Salud(bd VerificadorBD, version string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// El ping no puede colgar la peticion: dos segundos son de sobra para

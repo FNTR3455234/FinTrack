@@ -1,0 +1,1961 @@
+{
+  "info": {
+    "name": "FinTrack API",
+    "_postman_id": "fintrack-api-v1",
+    "description": "Coleccion completa de la API de FinTrack (entregable 4).\n\nEsta pensada para ejecutarse de arriba abajo con el Collection Runner: \"Login (usuario demo)\" guarda el token y todo lo demas lo hereda de la coleccion, y la carpeta \"Limpieza\" borra al final lo que se creo al principio.\n\nRequisitos: la API corriendo en {{base_url}} y los datos semilla cargados (`make up` y `make seed`).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token_acceso}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "token_acceso",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "token_refresco",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "email_nuevo",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "cuenta_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "categoria_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "transaccion_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "presupuesto_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Se aplica a TODAS las peticiones de la coleccion.",
+          "pm.test(\"responde en menos de dos segundos\", function () {",
+          "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+          "});"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Salud",
+      "description": "Estado del servicio. No pide token.",
+      "item": [
+        {
+          "name": "Estado del servicio",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/health",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "health"
+              ]
+            },
+            "description": "Responde 200 si la API y MongoDB estan vivos, y 503 si la base no contesta.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"mongo responde\", function () {",
+                  "    pm.expect(pm.response.json().datos.mongo).to.eql(\"ok\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Autenticacion",
+      "description": "Registro, inicio de sesion, refresco y perfil.",
+      "item": [
+        {
+          "name": "Registro (usuario nuevo)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/registro",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "registro"
+              ]
+            },
+            "description": "Da de alta un usuario con un correo distinto en cada ejecucion, para que la coleccion se pueda correr las veces que haga falta. Guarda los tokens.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Usuario de Postman\",\n  \"email\": \"{{email_nuevo}}\",\n  \"password\": \"Postman1234!\",\n  \"moneda\": \"MXN\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Un correo distinto por ejecucion: el email es unico en la base.",
+                  "pm.collectionVariables.set(\"email_nuevo\", `postman_${Date.now()}@fintrack.mx`);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const datos = pm.response.json().datos;",
+                  "pm.collectionVariables.set(\"token_acceso\", datos.token_acceso);",
+                  "pm.collectionVariables.set(\"token_refresco\", datos.token_refresco);",
+                  "pm.test(\"devuelve los dos tokens\", function () {",
+                  "    pm.expect(datos.token_acceso).to.be.a(\"string\");",
+                  "    pm.expect(datos.token_refresco).to.be.a(\"string\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login (usuario demo)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Inicia sesion con el usuario de la semilla, que trae 6 meses de historia. A partir de aqui la coleccion trabaja con esos datos.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email_demo}}\",\n  \"password\": \"{{password_demo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const datos = pm.response.json().datos;",
+                  "pm.collectionVariables.set(\"token_acceso\", datos.token_acceso);",
+                  "pm.collectionVariables.set(\"token_refresco\", datos.token_refresco);",
+                  "pm.test(\"devuelve los dos tokens\", function () {",
+                  "    pm.expect(datos.token_acceso).to.be.a(\"string\");",
+                  "    pm.expect(datos.token_refresco).to.be.a(\"string\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refrescar el token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/refresh",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "refresh"
+              ]
+            },
+            "description": "Devuelve SOLO un token de acceso nuevo: el de refresco sigue valido hasta que expire, a los 7 dias.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token_refresco\": \"{{token_refresco}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.collectionVariables.set(\"token_acceso\", pm.response.json().datos.token_acceso);",
+                  "pm.test(\"renueva el acceso y no toca el refresco\", function () {",
+                  "    const datos = pm.response.json().datos;",
+                  "    pm.expect(datos.token_acceso).to.be.a(\"string\");",
+                  "    pm.expect(datos.token_refresco).to.be.undefined;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Perfil",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/perfil",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "perfil"
+              ]
+            },
+            "description": "Datos del dueño del token."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"nunca devuelve la contraseña\", function () {",
+                  "    pm.expect(pm.response.text()).to.not.include(\"password\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Editar el perfil",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/perfil",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "perfil"
+              ]
+            },
+            "description": "Cambia el nombre y la moneda. El correo y la contraseña no se editan aqui.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Demo FinTrack\",\n  \"moneda\": \"MXN\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Cuentas",
+      "description": "CRUD de cuentas. Crea una de prueba y la deja lista para el resto.",
+      "item": [
+        {
+          "name": "Crear una cuenta",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/cuentas",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "cuentas"
+              ]
+            },
+            "description": "Guarda el id en cuenta_id.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Cuenta de prueba (Postman)\",\n  \"tipo\": \"debito\",\n  \"saldo_inicial\": 5000,\n  \"color\": \"#2563EB\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.collectionVariables.set(\"cuenta_id\", pm.response.json().datos.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar cuentas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/cuentas?incluir_archivadas=false",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "cuentas"
+              ],
+              "query": [
+                {
+                  "key": "incluir_archivadas",
+                  "value": "false"
+                }
+              ]
+            },
+            "description": "Solo las del usuario del token."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"devuelve una lista\", function () {",
+                  "    pm.expect(pm.response.json().datos).to.be.an(\"array\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Obtener una cuenta",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/cuentas/{{cuenta_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "cuentas",
+                "{{cuenta_id}}"
+              ]
+            },
+            "description": "Por identificador."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Editar una cuenta",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/cuentas/{{cuenta_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "cuentas",
+                "{{cuenta_id}}"
+              ]
+            },
+            "description": "Reemplaza los campos editables.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Cuenta de prueba editada\",\n  \"tipo\": \"debito\",\n  \"saldo_inicial\": 7500,\n  \"color\": \"#111111\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"guardo el saldo nuevo\", function () {",
+                  "    pm.expect(pm.response.json().datos.saldo_inicial).to.eql(7500);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Categorias",
+      "description": "CRUD de categorias.",
+      "item": [
+        {
+          "name": "Crear una categoria",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/categorias",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "categorias"
+              ]
+            },
+            "description": "Guarda el id en categoria_id.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Categoria de prueba (Postman)\",\n  \"tipo\": \"gasto\",\n  \"color\": \"#EA580C\",\n  \"icono\": \"prueba\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.collectionVariables.set(\"categoria_id\", pm.response.json().datos.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar categorias de gasto",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/categorias?tipo=gasto",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "categorias"
+              ],
+              "query": [
+                {
+                  "key": "tipo",
+                  "value": "gasto"
+                }
+              ]
+            },
+            "description": "Filtradas por tipo."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"todas son de gasto\", function () {",
+                  "    pm.response.json().datos.forEach(c => pm.expect(c.tipo).to.eql(\"gasto\"));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Obtener una categoria",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/categorias/{{categoria_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "categorias",
+                "{{categoria_id}}"
+              ]
+            },
+            "description": "Por identificador."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Archivar una categoria",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/categorias/{{categoria_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "categorias",
+                "{{categoria_id}}"
+              ]
+            },
+            "description": "Archivar en vez de borrar es lo que se hace cuando ya tiene movimientos.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Categoria de prueba (Postman)\",\n  \"tipo\": \"gasto\",\n  \"color\": \"#EA580C\",\n  \"icono\": \"prueba\",\n  \"archivada\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Transacciones",
+      "description": "CRUD, filtros, paginacion y alertas de presupuesto.",
+      "item": [
+        {
+          "name": "Registrar un movimiento",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/transacciones",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transacciones"
+              ]
+            },
+            "description": "Si el gasto deja su categoria al 80% o mas de su presupuesto del mes, la respuesta trae ademas el campo alerta.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cuenta_id\": \"{{cuenta_id}}\",\n  \"categoria_id\": \"{{categoria_id}}\",\n  \"tipo\": \"gasto\",\n  \"monto\": 850.5,\n  \"descripcion\": \"Movimiento de prueba\",\n  \"fecha\": \"2026-07-15T12:00:00Z\",\n  \"notas\": \"creado desde Postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.collectionVariables.set(\"transaccion_id\", pm.response.json().datos.id);",
+                  "pm.test(\"redondea a centavos\", function () {",
+                  "    pm.expect(pm.response.json().datos.monto).to.eql(850.5);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar con filtros",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/transacciones?desde=2026-07-01&hasta=2026-07-31&tipo=gasto&orden=fecha_desc&pagina=1&limite=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transacciones"
+              ],
+              "query": [
+                {
+                  "key": "desde",
+                  "value": "2026-07-01"
+                },
+                {
+                  "key": "hasta",
+                  "value": "2026-07-31"
+                },
+                {
+                  "key": "tipo",
+                  "value": "gasto"
+                },
+                {
+                  "key": "orden",
+                  "value": "fecha_desc"
+                },
+                {
+                  "key": "pagina",
+                  "value": "1"
+                },
+                {
+                  "key": "limite",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Rango de fechas, tipo, orden y paginacion. La meta trae pagina, limite, total y total_paginas."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"trae la meta de paginacion\", function () {",
+                  "    const meta = pm.response.json().meta;",
+                  "    pm.expect(meta.pagina).to.eql(1);",
+                  "    pm.expect(meta.limite).to.eql(10);",
+                  "    pm.expect(meta.total_paginas).to.be.at.least(1);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Buscar por texto",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/transacciones?busqueda=despensa",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transacciones"
+              ],
+              "query": [
+                {
+                  "key": "busqueda",
+                  "value": "despensa"
+                }
+              ]
+            },
+            "description": "La busqueda mira la descripcion y las notas. El texto se escapa antes de armar la expresion regular: buscar \".*\" devuelve cero resultados en vez de recorrer toda la coleccion."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Obtener un movimiento",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/transacciones/{{transaccion_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transacciones",
+                "{{transaccion_id}}"
+              ]
+            },
+            "description": "Por identificador."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Editar un movimiento",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/transacciones/{{transaccion_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transacciones",
+                "{{transaccion_id}}"
+              ]
+            },
+            "description": "El tipo tiene que seguir coincidiendo con el de su categoria.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cuenta_id\": \"{{cuenta_id}}\",\n  \"categoria_id\": \"{{categoria_id}}\",\n  \"tipo\": \"gasto\",\n  \"monto\": 900,\n  \"descripcion\": \"Movimiento editado\",\n  \"fecha\": \"2026-07-16T12:00:00Z\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"creado_en no cambia al editar\", function () {",
+                  "    pm.expect(pm.response.json().datos.creado_en).to.be.a(\"string\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Borrar un movimiento",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/transacciones/{{transaccion_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transacciones",
+                "{{transaccion_id}}"
+              ]
+            },
+            "description": "Se borra de verdad: una transaccion no es referencia de nada mas."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 204\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Presupuestos",
+      "description": "CRUD de presupuestos mensuales.",
+      "item": [
+        {
+          "name": "Crear un presupuesto",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/presupuestos",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "presupuestos"
+              ]
+            },
+            "description": "Solo se presupuestan categorias de gasto. Un indice unico impide dos presupuestos para la misma categoria y mes.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoria_id\": \"{{categoria_id}}\",\n  \"monto_limite\": 3000,\n  \"mes\": 7,\n  \"anio\": 2026\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.collectionVariables.set(\"presupuesto_id\", pm.response.json().datos.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar los del periodo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/presupuestos?mes=7&anio=2026",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "presupuestos"
+              ],
+              "query": [
+                {
+                  "key": "mes",
+                  "value": "7"
+                },
+                {
+                  "key": "anio",
+                  "value": "2026"
+                }
+              ]
+            },
+            "description": "Sin mes ni anio los devuelve todos."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Editar un presupuesto",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/presupuestos/{{presupuesto_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "presupuestos",
+                "{{presupuesto_id}}"
+              ]
+            },
+            "description": "Cambia el limite del mes.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoria_id\": \"{{categoria_id}}\",\n  \"monto_limite\": 3500,\n  \"mes\": 7,\n  \"anio\": 2026\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Borrar un presupuesto",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/presupuestos/{{presupuesto_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "presupuestos",
+                "{{presupuesto_id}}"
+              ]
+            },
+            "description": "Un presupuesto no es referencia de nada: se borra sin mas."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 204\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Reportes",
+      "description": "Las dos consultas relacionales y los reportes del tablero. Corren sobre los 6 meses de la semilla.",
+      "item": [
+        {
+          "name": "Gastos por categoria (consulta relacional 1)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/reportes/gastos-por-categoria?mes=7&anio=2026",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "reportes",
+                "gastos-por-categoria"
+              ],
+              "query": [
+                {
+                  "key": "mes",
+                  "value": "7"
+                },
+                {
+                  "key": "anio",
+                  "value": "2026"
+                }
+              ]
+            },
+            "description": "Cruza transacciones con categorias. Devuelve el total, el numero de movimientos y el peso porcentual de cada categoria."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"viene ordenado de mayor a menor gasto\", function () {",
+                  "    const filas = pm.response.json().datos;",
+                  "    for (let i = 1; i < filas.length; i++) {",
+                  "        pm.expect(filas[i - 1].total).to.be.at.least(filas[i].total);",
+                  "    }",
+                  "});",
+                  "pm.test(\"cada fila trae el nombre de su categoria\", function () {",
+                  "    pm.response.json().datos.forEach(f => pm.expect(f.nombre).to.be.a(\"string\"));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Estado de presupuestos (consulta relacional 2)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/reportes/estado-presupuestos?mes=7&anio=2026",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "reportes",
+                "estado-presupuestos"
+              ],
+              "query": [
+                {
+                  "key": "mes",
+                  "value": "7"
+                },
+                {
+                  "key": "anio",
+                  "value": "2026"
+                }
+              ]
+            },
+            "description": "Cruza presupuestos con categorias y con transacciones. Marca cada presupuesto como ok, alerta o excedido."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"el semaforo solo toma tres valores\", function () {",
+                  "    const validos = [\"ok\", \"alerta\", \"excedido\"];",
+                  "    pm.response.json().datos.forEach(f => pm.expect(validos).to.include(f.estado));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Resumen del mes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/reportes/resumen?mes=7&anio=2026",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "reportes",
+                "resumen"
+              ],
+              "query": [
+                {
+                  "key": "mes",
+                  "value": "7"
+                },
+                {
+                  "key": "anio",
+                  "value": "2026"
+                }
+              ]
+            },
+            "description": "Ingresos, gastos, balance, saldo disponible y conteo del semaforo."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"el balance cuadra\", function () {",
+                  "    const d = pm.response.json().datos;",
+                  "    pm.expect(Math.abs(d.ingresos - d.gastos - d.balance)).to.be.below(0.01);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Tendencia de 6 meses",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/reportes/tendencia?mes=7&anio=2026&meses=6",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "reportes",
+                "tendencia"
+              ],
+              "query": [
+                {
+                  "key": "mes",
+                  "value": "7"
+                },
+                {
+                  "key": "anio",
+                  "value": "2026"
+                },
+                {
+                  "key": "meses",
+                  "value": "6"
+                }
+              ]
+            },
+            "description": "Serie mensual. Los meses sin movimientos tambien salen, con ceros."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"devuelve exactamente 6 meses\", function () {",
+                  "    pm.expect(pm.response.json().datos).to.have.lengthOf(6);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Saldo de cada cuenta",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/reportes/saldos",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "reportes",
+                "saldos"
+              ]
+            },
+            "description": "saldo_inicial + ingresos - gastos. No se guarda: se calcula cruzando cuentas con transacciones."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "CSV",
+      "description": "Exportar e importar movimientos. Para importar hay que elegir el archivo a mano: Postman no guarda archivos dentro de la coleccion. En postman/ejemplo.csv hay uno listo.",
+      "item": [
+        {
+          "name": "Exportar a CSV",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/transacciones/exportar?desde=2026-07-01&hasta=2026-07-31",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transacciones",
+                "exportar"
+              ],
+              "query": [
+                {
+                  "key": "desde",
+                  "value": "2026-07-01"
+                },
+                {
+                  "key": "hasta",
+                  "value": "2026-07-31"
+                }
+              ]
+            },
+            "description": "Descarga un archivo con los mismos filtros del listado, sin paginar."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"baja como archivo CSV\", function () {",
+                  "    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"text/csv\");",
+                  "    pm.expect(pm.response.headers.get(\"Content-Disposition\")).to.include(\"attachment\");",
+                  "});",
+                  "pm.test(\"la primera fila es el encabezado\", function () {",
+                  "    pm.expect(pm.response.text()).to.include(\"fecha,tipo,cuenta,categoria,monto,descripcion,notas\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Importar desde CSV",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/transacciones/importar",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "transacciones",
+                "importar"
+              ]
+            },
+            "description": "Elige postman/ejemplo.csv en el campo \"archivo\". O entra el archivo completo o no entra nada: si una sola fila falla, responde 400 con la lista de errores y no guarda ninguna.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "archivo",
+                  "type": "file",
+                  "src": [],
+                  "description": "Archivo CSV, maximo 2 MiB"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Errores",
+      "description": "Los casos que tienen que fallar. Sirven para comprobar el formato uniforme de error y el aislamiento entre usuarios.",
+      "item": [
+        {
+          "name": "401 sin token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/cuentas",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "cuentas"
+              ]
+            },
+            "description": "Sin encabezado Authorization.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 401\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "pm.test(\"el error trae codigo y mensaje\", function () {",
+                  "    const e = pm.response.json().error;",
+                  "    pm.expect(e.codigo).to.eql(\"NO_AUTENTICADO\");",
+                  "    pm.expect(e.mensaje).to.be.a(\"string\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "401 con un token inventado",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer token.que.no.vale"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/cuentas",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "cuentas"
+              ]
+            },
+            "description": "El token no esta firmado con el secreto del servidor. La peticion va sin la autenticacion de la coleccion, porque el bearer se aplica despues del script previo y pisaria la cabecera.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 401\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "pm.test(\"el codigo es TOKEN_INVALIDO\", function () {",
+                  "    pm.expect(pm.response.json().error.codigo).to.eql(\"TOKEN_INVALIDO\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "404 con un id de otro usuario",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/cuentas/650100000000000000000099",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "cuentas",
+                "650100000000000000000099"
+              ]
+            },
+            "description": "Se responde 404 y no 403: un 403 confirmaria que el recurso existe."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "400 con un id mal escrito",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/cuentas/no-es-un-objectid",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "cuentas",
+                "no-es-un-objectid"
+              ]
+            },
+            "description": "El identificador tiene que ser hexadecimal de 24 caracteres."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test(\"el codigo es ID_INVALIDO\", function () {",
+                  "    pm.expect(pm.response.json().error.codigo).to.eql(\"ID_INVALIDO\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "400 con datos invalidos",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/cuentas",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "cuentas"
+              ]
+            },
+            "description": "Falta el nombre, el tipo no existe y el color no es hexadecimal. El error trae la lista completa de fallos, no solo el primero.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"\",\n  \"tipo\": \"cripto\",\n  \"saldo_inicial\": 0,\n  \"color\": \"azul\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test(\"enumera todos los campos malos\", function () {",
+                  "    pm.expect(pm.response.json().error.detalles.length).to.be.at.least(3);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "400 con un periodo imposible",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/reportes/resumen?mes=13&anio=2026",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "reportes",
+                "resumen"
+              ],
+              "query": [
+                {
+                  "key": "mes",
+                  "value": "13"
+                },
+                {
+                  "key": "anio",
+                  "value": "2026"
+                }
+              ]
+            },
+            "description": "El mes 13 no existe. Se rechaza en vez de devolver ceros, que se leerian como \"no gastaste nada\"."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test(\"el codigo es PERIODO_INVALIDO\", function () {",
+                  "    pm.expect(pm.response.json().error.codigo).to.eql(\"PERIODO_INVALIDO\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "404 en una ruta que no existe",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/no-existe",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "no-existe"
+              ]
+            },
+            "description": "Hasta el 404 de ruta responde con el mismo formato JSON, no con el texto plano de Gin.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "pm.test(\"el codigo es RUTA_NO_ENCONTRADA\", function () {",
+                  "    pm.expect(pm.response.json().error.codigo).to.eql(\"RUTA_NO_ENCONTRADA\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "405 con el metodo equivocado",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/health",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "health"
+              ]
+            },
+            "description": "/health solo acepta GET.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 405\", function () {",
+                  "    pm.response.to.have.status(405);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Limpieza",
+      "description": "Borra lo que creo la coleccion, para que se pueda volver a correr sobre la misma base.",
+      "item": [
+        {
+          "name": "Borrar la categoria de prueba",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/categorias/{{categoria_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "categorias",
+                "{{categoria_id}}"
+              ]
+            },
+            "description": "Ya no tiene movimientos ni presupuestos: se puede borrar."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 204\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Borrar la cuenta de prueba",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/cuentas/{{cuenta_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "cuentas",
+                "{{cuenta_id}}"
+              ]
+            },
+            "description": "Ya no tiene movimientos: se puede borrar."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 204\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

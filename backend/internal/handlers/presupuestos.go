@@ -31,6 +31,18 @@ func NuevoPresupuestos(servicio ServicioPresupuestos) *Presupuestos {
 
 // Listar atiende GET /presupuestos. Con ?mes= y ?anio= devuelve solo los de ese
 // periodo; sin ellos, todos.
+//
+//	@Summary		Listar presupuestos
+//	@Description	Sin mes ni anio los devuelve todos; con ellos, solo los de ese periodo.
+//	@Tags			presupuestos
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			mes	query	int	false	"Mes del 1 al 12 (por defecto, el mes en curso)"
+//	@Param			anio	query	int	false	"Año de 2000 a 2100 (por defecto, el año en curso)"
+//	@Success		200	{object}	respuestas.Sobre{datos=[]modelos.Presupuesto}
+//	@Failure		400	{object}	respuestas.SobreError
+//	@Failure		401	{object}	respuestas.SobreError
+//	@Router			/presupuestos [get]
 func (h *Presupuestos) Listar(c *gin.Context) {
 	usuarioID, ok := usuarioAutenticado(c)
 	if !ok {
@@ -51,6 +63,17 @@ func (h *Presupuestos) Listar(c *gin.Context) {
 }
 
 // Obtener atiende GET /presupuestos/:id.
+//
+//	@Summary		Obtener un presupuesto
+//	@Tags			presupuestos
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id	path	string	true	"Identificador de 24 caracteres"
+//	@Success		200	{object}	respuestas.Sobre{datos=modelos.Presupuesto}
+//	@Failure		400	{object}	respuestas.SobreError
+//	@Failure		401	{object}	respuestas.SobreError
+//	@Failure		404	{object}	respuestas.SobreError
+//	@Router			/presupuestos/{id} [get]
 func (h *Presupuestos) Obtener(c *gin.Context) {
 	usuarioID, ok := usuarioAutenticado(c)
 	if !ok {
@@ -70,6 +93,19 @@ func (h *Presupuestos) Obtener(c *gin.Context) {
 }
 
 // Crear atiende POST /presupuestos.
+//
+//	@Summary		Crear un presupuesto
+//	@Description	Solo se presupuestan categorias de gasto. Un indice unico impide dos presupuestos para la misma categoria y mes (409).
+//	@Tags			presupuestos
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			cuerpo	body	modelos.PeticionPresupuesto	true	"Categoria, limite y periodo"
+//	@Success		201	{object}	respuestas.Sobre{datos=modelos.Presupuesto}
+//	@Failure		400	{object}	respuestas.SobreError
+//	@Failure		401	{object}	respuestas.SobreError
+//	@Failure		404	{object}	respuestas.SobreError
+//	@Failure		409	{object}	respuestas.SobreError
+//	@Router			/presupuestos [post]
 func (h *Presupuestos) Crear(c *gin.Context) {
 	usuarioID, ok := usuarioAutenticado(c)
 	if !ok {
@@ -90,6 +126,20 @@ func (h *Presupuestos) Crear(c *gin.Context) {
 }
 
 // Actualizar atiende PUT /presupuestos/:id.
+//
+//	@Summary		Editar un presupuesto
+//	@Description	Moverlo al periodo de otro que ya existe tambien es un duplicado (409).
+//	@Tags			presupuestos
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id	path	string	true	"Identificador de 24 caracteres"
+//	@Param			cuerpo	body	modelos.PeticionPresupuesto	true	"Categoria, limite y periodo"
+//	@Success		200	{object}	respuestas.Sobre{datos=modelos.Presupuesto}
+//	@Failure		400	{object}	respuestas.SobreError
+//	@Failure		401	{object}	respuestas.SobreError
+//	@Failure		404	{object}	respuestas.SobreError
+//	@Failure		409	{object}	respuestas.SobreError
+//	@Router			/presupuestos/{id} [put]
 func (h *Presupuestos) Actualizar(c *gin.Context) {
 	usuarioID, ok := usuarioAutenticado(c)
 	if !ok {
@@ -114,6 +164,17 @@ func (h *Presupuestos) Actualizar(c *gin.Context) {
 }
 
 // Eliminar atiende DELETE /presupuestos/:id.
+//
+//	@Summary		Borrar un presupuesto
+//	@Tags			presupuestos
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id	path	string	true	"Identificador de 24 caracteres"
+//	@Success		204	{string}	string	"Sin contenido"
+//	@Failure		400	{object}	respuestas.SobreError
+//	@Failure		401	{object}	respuestas.SobreError
+//	@Failure		404	{object}	respuestas.SobreError
+//	@Router			/presupuestos/{id} [delete]
 func (h *Presupuestos) Eliminar(c *gin.Context) {
 	usuarioID, ok := usuarioAutenticado(c)
 	if !ok {

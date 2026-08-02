@@ -80,6 +80,7 @@ func routerReal(t *testing.T) *api {
 		Transacciones: servicios.NuevoTransacciones(repoTransacciones, repoCuentas, repoCategorias, repoReportes),
 		Presupuestos:  servicios.NuevoPresupuestos(repoPresupuestos, repoCategorias),
 		Reportes:      servicios.NuevoReportes(repoReportes),
+		CSV:           servicios.NuevoCSV(repoTransacciones, repoCuentas, repoCategorias),
 	})
 
 	return &api{router: router, t: t}

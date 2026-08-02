@@ -32,6 +32,17 @@ func NuevoAuth(servicio ServicioAuth) *Auth {
 }
 
 // Registro atiende POST /auth/registro.
+//
+//	@Summary		Registrar un usuario
+//	@Description	Da de alta la cuenta y devuelve la sesion ya iniciada.
+//	@Tags			auth
+//	@Produce		json
+//	@Param			cuerpo	body	modelos.PeticionRegistro	true	"Datos del usuario"
+//	@Success		201	{object}	respuestas.Sobre{datos=modelos.RespuestaSesion}
+//	@Failure		400	{object}	respuestas.SobreError
+//	@Failure		409	{object}	respuestas.SobreError
+//	@Failure		429	{object}	respuestas.SobreError
+//	@Router			/auth/registro [post]
 func (h *Auth) Registro(c *gin.Context) {
 	var peticion modelos.PeticionRegistro
 	if !enlazar(c, &peticion) {
@@ -47,6 +58,17 @@ func (h *Auth) Registro(c *gin.Context) {
 }
 
 // Login atiende POST /auth/login.
+//
+//	@Summary		Iniciar sesion
+//	@Description	Devuelve el mismo error si el correo no existe o si la contraseña es incorrecta, para no revelar que correos estan registrados.
+//	@Tags			auth
+//	@Produce		json
+//	@Param			cuerpo	body	modelos.PeticionLogin	true	"Correo y contraseña"
+//	@Success		200	{object}	respuestas.Sobre{datos=modelos.RespuestaSesion}
+//	@Failure		400	{object}	respuestas.SobreError
+//	@Failure		401	{object}	respuestas.SobreError
+//	@Failure		429	{object}	respuestas.SobreError
+//	@Router			/auth/login [post]
 func (h *Auth) Login(c *gin.Context) {
 	var peticion modelos.PeticionLogin
 	if !enlazar(c, &peticion) {
@@ -62,6 +84,17 @@ func (h *Auth) Login(c *gin.Context) {
 }
 
 // Refrescar atiende POST /auth/refresh.
+//
+//	@Summary		Renovar el token de acceso
+//	@Description	Devuelve SOLO un token de acceso nuevo: el de refresco sigue valido hasta que expire, a los 7 dias.
+//	@Tags			auth
+//	@Produce		json
+//	@Param			cuerpo	body	modelos.PeticionRefresco	true	"Token de refresco"
+//	@Success		200	{object}	respuestas.Sobre{datos=modelos.RespuestaRefresco}
+//	@Failure		400	{object}	respuestas.SobreError
+//	@Failure		401	{object}	respuestas.SobreError
+//	@Failure		429	{object}	respuestas.SobreError
+//	@Router			/auth/refresh [post]
 func (h *Auth) Refrescar(c *gin.Context) {
 	var peticion modelos.PeticionRefresco
 	if !enlazar(c, &peticion) {
@@ -77,6 +110,16 @@ func (h *Auth) Refrescar(c *gin.Context) {
 }
 
 // Perfil atiende GET /auth/perfil.
+//
+//	@Summary		Perfil del usuario
+//	@Description	Datos del dueño del token.
+//	@Tags			auth
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Success		200	{object}	respuestas.Sobre{datos=modelos.Usuario}
+//	@Failure		401	{object}	respuestas.SobreError
+//	@Failure		404	{object}	respuestas.SobreError
+//	@Router			/auth/perfil [get]
 func (h *Auth) Perfil(c *gin.Context) {
 	usuarioID, ok := usuarioAutenticado(c)
 	if !ok {
@@ -92,6 +135,18 @@ func (h *Auth) Perfil(c *gin.Context) {
 }
 
 // ActualizarPerfil atiende PUT /auth/perfil.
+//
+//	@Summary		Editar el perfil
+//	@Description	Cambia el nombre y la moneda. El correo y la contraseña no se editan aqui.
+//	@Tags			auth
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			cuerpo	body	modelos.PeticionActualizarPerfil	true	"Nombre y moneda"
+//	@Success		200	{object}	respuestas.Sobre{datos=modelos.Usuario}
+//	@Failure		400	{object}	respuestas.SobreError
+//	@Failure		401	{object}	respuestas.SobreError
+//	@Failure		404	{object}	respuestas.SobreError
+//	@Router			/auth/perfil [put]
 func (h *Auth) ActualizarPerfil(c *gin.Context) {
 	usuarioID, ok := usuarioAutenticado(c)
 	if !ok {
