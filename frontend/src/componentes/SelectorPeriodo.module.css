@@ -1,0 +1,58 @@
+.selector {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-chico);
+}
+
+.flecha {
+  background: none;
+  border: 0;
+  padding: 3px 9px;
+  font-size: 1.2rem;
+  line-height: 1;
+  color: var(--texto-tenue);
+  cursor: pointer;
+  border-radius: var(--radio-chico);
+}
+
+.flecha:hover {
+  background: var(--superficie-alta);
+  color: var(--texto);
+}
+
+.periodo {
+  min-width: 12ch;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+/* El texto llega como "julio de 2026": en espanol los meses van en minuscula
+   dentro de una frase, y asi se usa en los titulos de las paginas. Aqui va
+   suelto y necesita mayuscula inicial.
+   Se hace con ::first-letter y no con text-transform:capitalize, que pone en
+   mayuscula TODAS las palabras y dejaria "Julio De 2026". */
+.periodo::first-letter {
+  text-transform: uppercase;
+}
+
+.hoy {
+  background: none;
+  border: 0;
+  border-left: 1px solid var(--borde);
+  margin-left: 4px;
+  padding: 4px 10px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--acento);
+  cursor: pointer;
+}
+
+.hoy:disabled {
+  color: var(--texto-tenue);
+  cursor: default;
+}

@@ -408,6 +408,109 @@ justificarlas después. Formato por entrada: **decisión, contexto, alternativas
 
 ---
 
+## 027 — El 401 se reintenta una vez por petición, no una vez por sesión
+
+**Fecha:** 2026-08-02 · **Fase:** 7
+
+- **Contexto:** el token de acceso vive 15 minutos. El cliente tiene que renovarlo sin que el
+  usuario note nada.
+- **Alternativas:** (a) decodificar el JWT en el navegador y renovar antes de que expire;
+  (b) dejar que la petición falle con `401` y renovar ahí.
+- **Decisión:** (b), con tres detalles en `frontend/src/api/cliente.js`:
+  1. La marca de reintento va en la config de la petición (`peticion.reintentada`), no en una
+     variable del módulo: el límite es *una vez por petición*, no *una vez por sesión*.
+  2. Si varias peticiones fallan a la vez, todas se cuelgan de la **misma** promesa de refresco.
+  3. `/auth/login`, `/auth/registro` y `/auth/refresh` quedan fuera, listadas una por una y no por
+     prefijo, porque `/auth/perfil` empieza igual y esa sí debe reintentarse.
+- **Por qué:** (a) obliga a confiar en el reloj del navegador; quien decide si un token sirve es el
+  servidor. Sin el punto 1, un token de refresco vencido daría `401 → refresh → 401 → refresh` en
+  bucle. Sin el punto 2, el segundo refresco llegaría con el token viejo y cerraría la sesión sin
+  motivo. Sin el punto 3, un error de credenciales se convertiría en un cierre de sesión.
+
+---
+
+## 028 — Las gráficas no usan el verde y el rojo de la aplicación
+
+**Fecha:** 2026-08-02 · **Fase:** 7
+
+- **Contexto:** ingresos en verde y gastos en rojo es la convención de la app y se usa en cifras,
+  etiquetas y montos. Lo natural era llevarla también a la gráfica de barras.
+- **Hallazgo:** medido con un validador de paletas —no a ojo—, `#16A34A` contra `#DC2626` se
+  separan **ΔE 5.0** en simulación de deuteranopia (y **1.1** con las variantes del tema oscuro).
+  Para una de cada doce personas aproximadamente, esas dos barras son el mismo color.
+- **Decisión:** las series de las gráficas usan `--serie-ingresos: #059669` (esmeralda) y
+  `--serie-gastos: #EA580C` (naranja): **ΔE 10.1**, y pasan las cinco comprobaciones —banda de
+  luminosidad, croma mínimo, separación bajo daltonismo, separación con visión normal y contraste—
+  contra las **dos** superficies, la clara y la oscura. Son el mismo par en los dos temas.
+- **Por qué:** en una gráfica el color es lo único que distingue una serie de otra. El verde y el
+  rojo se quedan donde el color **acompaña a una palabra** ("Ingreso", "Gasto", "Excedido") y por
+  tanto no es la única pista. Además, el rojo ya está reservado para los errores y para el estado
+  "excedido": usarlo también como color de serie mezclaría estado con identidad.
+
+---
+
+## 029 — Ninguna gráfica es la única forma de leer un dato
+
+**Fecha:** 2026-08-02 · **Fase:** 7
+
+- **Contexto:** los colores de las categorías **los elige el usuario**. La aplicación no puede
+  validarlos de antemano ni garantizar que dos categorías vecinas se distingan.
+- **Decisión:** cada gráfica lleva debajo un `<details>` con los mismos números en una tabla, una
+  leyenda con el nombre de cada serie, y un globo que también nombra lo que muestra. El pastel
+  agrupa a partir de la sexta categoría en una porción "Otras (n)"; la cola sigue entera en la
+  tabla.
+- **Por qué:** si la única forma de leer un valor es pasar el ratón por encima, el dato no existe
+  para quien navega con teclado, usa un lector de pantalla o imprime la página. Y como los colores
+  son datos del usuario, la interfaz tiene que seguir funcionando con cualquier combinación.
+
+---
+
+## 030 — Al recargar, lo viejo se atenúa; el esqueleto sale una sola vez
+
+**Fecha:** 2026-08-02 · **Fase:** 7
+
+- **Contexto:** el tablero, los reportes y el listado se vuelven a pedir cada vez que cambia el mes,
+  la página o un filtro.
+- **Decisión:** el esqueleto se pinta solo cuando todavía no hay datos. En las recargas posteriores
+  se conserva lo que ya estaba a media opacidad (`[data-cargando]`) hasta que llegan los nuevos.
+- **Por qué:** volver al esqueleto en cada recarga hace saltar la maquetación y pierde el sitio
+  donde estaba el usuario. `usePeticion` no borra `datos` al empezar una petición nueva, que es lo
+  que hace posible esta transición.
+
+---
+
+## 031 — Los tokens viven en `localStorage`
+
+**Fecha:** 2026-08-02 · **Fase:** 7
+
+- **Contexto:** hay que guardar el token de acceso y el de refresco entre recargas.
+- **Alternativas:** `localStorage`, o una cookie `httpOnly` emitida por el backend.
+- **Decisión:** `localStorage`, con todo el acceso encapsulado en `api/sesion.js` y envuelto en
+  `try` (en modo incógnito de Safari, escribir lanza).
+- **Por qué:** la cookie `httpOnly` es más segura contra XSS, pero exigiría que el backend la
+  emitiera, la validara y gestionara CSRF, y eso cambia el contrato de la fase 3, que es sin estado
+  y espera el token en `Authorization`. **Queda como limitación conocida**, no como decisión
+  cerrada: si en la fase 10 se decide endurecerlo, el único archivo que cambia es `sesion.js`.
+
+---
+
+## 032 — `Content-Disposition` se expone en CORS
+
+**Fecha:** 2026-08-02 · **Fase:** 7
+
+- **Contexto:** al exportar el CSV, el frontend quiere guardar el archivo con el nombre que propone
+  el servidor.
+- **Hallazgo:** el navegador solo deja leer un puñado de encabezados de una respuesta entre
+  orígenes, y `Content-Disposition` no está entre ellos. En desarrollo no se notaba porque el proxy
+  de Vite hace que todo sea el mismo origen.
+- **Decisión:** añadir `Content-Disposition` a `Access-Control-Expose-Headers` en el middleware de
+  CORS, con su prueba. El cliente igualmente arma un nombre de respaldo con la fecha de hoy si el
+  encabezado no llega.
+- **Por qué:** es un cambio de una línea en el backend que evita un fallo silencioso el día que la
+  API y el frontend vivan en dominios distintos.
+
+---
+
 ## Pendientes anotados (se resuelven en su fase)
 
 - **Fase 3 — Refresh token sin estado:** el refresh token no se guarda en la base, así que se puede
@@ -420,9 +523,17 @@ justificarlas después. Formato por entrada: **decisión, contexto, alternativas
   responde `409` y el cliente debe archivar (`archivada: true`) en lugar de borrar. Sin cascada.
 - ~~**Fase 5 — Zona horaria**~~ → resuelto en la [decisión 019](#019--la-fecha-de-un-movimiento-es-un-día-anclado-a-las-1200-utc).
 - ~~**Fase 5 — Saldo de cuentas**~~ → resuelto en la [decisión 020](#020--el-saldo-de-una-cuenta-se-calcula-no-se-guarda).
-- **Fase 7 — Alertas solo al crear:** `POST /transacciones` avisa si el gasto rebasa el presupuesto,
-  pero `PUT` no. Editar el monto de un gasto también puede cruzar el umbral. Se resuelve en el
-  frontend consultando `/reportes/estado-presupuestos` después de guardar; si no basta, se extiende
-  el campo `alerta` al `PUT`.
-- **Fase 7 — Importación sin vista previa:** el CSV se valida entero y se guarda o se rechaza en la
-  misma petición. Falta decidir si el frontend enseña antes qué se va a importar.
+- **Fase 7 — Alertas solo al crear:** sigue abierto. `POST /transacciones` avisa si el gasto rebasa
+  el presupuesto, pero `PUT` no, y el frontend solo enseña la alerta al crear. Editar el monto de un
+  gasto también puede cruzar el umbral. La salida más limpia es extender el campo `alerta` al `PUT`,
+  no que el cliente haga una segunda consulta después de cada guardado.
+- **Fase 7 — Importación sin vista previa:** sigue abierto. El CSV se valida entero y se guarda o se
+  rechaza en la misma petición; el frontend enseña las filas a corregir, pero no lo que se va a
+  importar. Una vista previa necesitaría un endpoint que valide sin escribir.
+- **Fase 7 — Frontend sin pruebas automatizadas:** la verificación de la fase 7 fue manual, contra
+  la API viva y con un recorrido guiado en un navegador sin ventana. Falta decidir si entran Vitest
+  y Testing Library, que serían las primeras dependencias de prueba del frontend.
+- **Fase 1 — La semilla está anclada a julio de 2026:** `ANIO_FINAL` y `MES_FINAL` en
+  `database/02_insertar_datos.js`. Como el tablero abre en el mes en curso, según cuándo se haga la
+  demostración lo primero que se ve pueden ser ceros. Se re-ancla cambiando esas dos líneas y
+  volviendo a correr `make seed`.

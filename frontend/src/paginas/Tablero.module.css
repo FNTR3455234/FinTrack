@@ -1,0 +1,37 @@
+.tablero {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: opacity var(--transicion);
+}
+
+/* Al cambiar de mes, lo que ya estaba se atenua en vez de desaparecer. Asi no
+   hay salto de maquetacion ni parpadeo de esqueletos en cada recarga. */
+.tablero[data-cargando] {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.cifras {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 14px;
+}
+
+.columnas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+/* min-width 0 evita que una grafica ancha estire su columna del grid y saque la
+   pagina de su ancho maximo. */
+.ancha {
+  min-width: 0;
+}
+
+.barras {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}

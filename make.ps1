@@ -34,6 +34,7 @@ function Invoke-Ayuda {
     Write-Host "  .\make.ps1 up      Levanta MongoDB (compose de desarrollo)"
     Write-Host "  .\make.ps1 down    Detiene MongoDB"
     Write-Host "  .\make.ps1 dev     Levanta Mongo y arranca la API en modo desarrollo   [fase 2]"
+    Write-Host "  .\make.ps1 web     Arranca el frontend de Vite en el 5173             [fase 7]"
     Write-Host "  .\make.ps1 test    Corre las pruebas de Go con cobertura"
     Write-Host "  .\make.ps1 test-integracion  Todas las pruebas, incluidas las de MongoDB"
     Write-Host "  .\make.ps1 lint    Corre go vet y golangci-lint                        [fase 2]"
@@ -58,6 +59,17 @@ function Invoke-Dev {
     Invoke-Up
     Push-Location "$raiz\backend"
     try { & go run ./cmd/api } finally { Pop-Location }
+}
+
+function Invoke-Web {
+    # El frontend habla con la API a traves del proxy de Vite, asi que hace falta
+    # que la API ya este corriendo (.\make.ps1 dev en otra terminal).
+    Push-Location "$raiz\frontend"
+    try {
+        & npm install --no-audit --no-fund
+        Verificar "instalar las dependencias del frontend"
+        & npm run dev
+    } finally { Pop-Location }
 }
 
 # MostrarCobertura imprime la ultima linea del reporte, que es el total.
@@ -161,6 +173,7 @@ switch ($Target.ToLower()) {
     "up"    { Invoke-Up }
     "down"  { Invoke-Down }
     "dev"   { Invoke-Dev }
+    "web"   { Invoke-Web }
     "test"  { Invoke-Test }
     "test-integracion" { Invoke-TestIntegracion }
     "lint"  { Invoke-Lint }

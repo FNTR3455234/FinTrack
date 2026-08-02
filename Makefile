@@ -11,13 +11,14 @@ MONGO_URI_DEV = mongodb://fintrack_admin:fintrack_dev_2026@localhost:27017/?auth
 MONGOSH = mongosh -u fintrack_admin -p fintrack_dev_2026 --authenticationDatabase admin --quiet
 
 .DEFAULT_GOAL := help
-.PHONY: help up down dev test test-integracion lint seed build swagger postman
+.PHONY: help up down dev web test test-integracion lint seed build swagger postman
 
 help: ## Muestra esta ayuda
 	@echo "FinTrack - atajos disponibles:"
 	@echo "  make up      Levanta MongoDB (compose de desarrollo)"
 	@echo "  make down    Detiene MongoDB"
 	@echo "  make dev     Levanta Mongo y arranca la API en modo desarrollo   [fase 2]"
+	@echo "  make web     Arranca el frontend de Vite en el 5173             [fase 7]"
 	@echo "  make test    Corre las pruebas de Go con cobertura"
 	@echo "  make test-integracion  Todas las pruebas, incluidas las de MongoDB"
 	@echo "  make lint    Corre go vet y golangci-lint                        [fase 2]"
@@ -35,6 +36,9 @@ down: ## Detiene MongoDB (conserva los datos del volumen)
 
 dev: up ## Levanta Mongo y arranca la API con recarga manual
 	cd backend && go run ./cmd/api
+
+web: ## Arranca el frontend (necesita la API corriendo en el 8080)
+	cd frontend && npm install --no-audit --no-fund && npm run dev
 
 test: ## Pruebas del backend (las de integracion se saltan solas)
 	cd backend && go test ./... -coverpkg=./cmd/...,./internal/... -coverprofile=coverage.out

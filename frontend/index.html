@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="FinTrack: finanzas personales, presupuestos y reportes." />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>FinTrack</title>
+
+    <!--
+      El tema se aplica antes de que React monte para evitar el parpadeo blanco
+      al recargar en modo oscuro. Es el unico script en linea del proyecto y por
+      eso vive aqui y no en un modulo: si se cargara como modulo correria
+      despues del primer pintado y el parpadeo volveria.
+    -->
+    <script>
+      (function () {
+        var guardado = localStorage.getItem('fintrack_tema')
+        var oscuro = guardado
+          ? guardado === 'oscuro'
+          : window.matchMedia('(prefers-color-scheme: dark)').matches
+        document.documentElement.dataset.tema = oscuro ? 'oscuro' : 'claro'
+      })()
+    </script>
+  </head>
+  <body>
+    <div id="raiz"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

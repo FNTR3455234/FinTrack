@@ -1,0 +1,46 @@
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  transition: opacity var(--transicion);
+}
+
+.lista[data-cargando] {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.fila {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* La barra se lleva todo el ancho sobrante; min-width 0 es lo que le permite
+   encogerse dentro del flex en lugar de empujar a las acciones fuera. */
+.barra {
+  flex: 1;
+  min-width: 0;
+}
+
+.acciones {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .fila {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .acciones {
+    justify-content: flex-end;
+  }
+}

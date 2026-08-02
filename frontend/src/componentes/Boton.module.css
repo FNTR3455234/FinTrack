@@ -1,0 +1,76 @@
+.boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border: 1px solid transparent;
+  border-radius: var(--radio-chico);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transicion), border-color var(--transicion), opacity var(--transicion);
+  /* Sin esto, un boton de "Guardar" cambia de ancho al pasar a "Guardando" y la
+     fila entera da un salto. */
+  white-space: nowrap;
+}
+
+.boton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.primario {
+  background: var(--acento);
+  color: var(--acento-texto);
+}
+
+.primario:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.secundario {
+  background: var(--superficie);
+  border-color: var(--borde);
+  color: var(--texto);
+}
+
+.secundario:hover:not(:disabled) {
+  background: var(--superficie-alta);
+}
+
+.peligro {
+  background: var(--peligro);
+  color: #fff;
+}
+
+.peligro:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+/* Variante sin fondo, para las acciones de cada fila de una tabla. */
+.texto {
+  background: transparent;
+  color: var(--texto-tenue);
+  padding: 6px 8px;
+}
+
+.texto:hover:not(:disabled) {
+  background: var(--superficie-alta);
+  color: var(--texto);
+}
+
+.rueda {
+  width: 13px;
+  height: 13px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: girar 700ms linear infinite;
+}
+
+@keyframes girar {
+  to {
+    transform: rotate(360deg);
+  }
+}

@@ -1,0 +1,30 @@
+.pila {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.alerta {
+  margin-bottom: 16px;
+}
+
+.cerrarAviso {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Al cambiar de pagina o de filtro, la tabla anterior se atenua en vez de
+   convertirse en esqueleto: no hay salto de altura y se conserva el sitio. */
+.contenido {
+  transition: opacity var(--transicion);
+}
+
+.contenido[data-cargando] {
+  opacity: 0.55;
+  pointer-events: none;
+}

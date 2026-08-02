@@ -1,0 +1,193 @@
+.marco {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* El enlace de salto vive fuera de la pantalla hasta que recibe el foco. No se
+   usa display:none porque eso lo sacaria tambien del orden de tabulacion, que
+   es justo lo que se quiere conservar. */
+.salto {
+  position: absolute;
+  left: -9999px;
+  top: 8px;
+  z-index: 20;
+  padding: 8px 14px;
+  background: var(--acento);
+  color: var(--acento-texto);
+  border-radius: var(--radio-chico);
+  font-weight: 600;
+}
+
+.salto:focus {
+  left: 8px;
+}
+
+.lateral {
+  width: var(--barra-lateral);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 18px 12px;
+  background: var(--superficie);
+  border-right: 1px solid var(--borde);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.marca {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 8px;
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.logo {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  background: var(--acento);
+  color: var(--acento-texto);
+  border-radius: 8px;
+  font-weight: 800;
+}
+
+.navegacion {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.enlace {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: var(--radio-chico);
+  color: var(--texto-tenue);
+  font-size: 0.9rem;
+  font-weight: 550;
+  text-decoration: none;
+  transition: background var(--transicion), color var(--transicion);
+}
+
+.enlace:hover {
+  background: var(--superficie-alta);
+  color: var(--texto);
+  text-decoration: none;
+}
+
+.activo {
+  background: var(--acento-suave);
+  color: var(--acento);
+  font-weight: 650;
+}
+
+.icono {
+  width: 18px;
+  text-align: center;
+  opacity: 0.85;
+}
+
+.columna {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 10px 20px;
+  background: var(--superficie);
+  border-bottom: 1px solid var(--borde);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.iconoBoton {
+  background: none;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-chico);
+  padding: 5px 10px;
+  font-size: 1rem;
+  cursor: pointer;
+  color: var(--texto-tenue);
+}
+
+.iconoBoton:hover {
+  background: var(--superficie-alta);
+  color: var(--texto);
+}
+
+.usuario {
+  color: var(--texto);
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.salir {
+  background: none;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-chico);
+  padding: 5px 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--texto-tenue);
+  cursor: pointer;
+}
+
+.salir:hover {
+  background: var(--superficie-alta);
+  color: var(--texto);
+}
+
+.contenido {
+  flex: 1;
+  width: 100%;
+  max-width: var(--ancho-maximo);
+  margin: 0 auto;
+  padding: 22px 20px 48px;
+  min-width: 0;
+}
+
+/* En pantallas estrechas la barra lateral pasa a ser una fila arriba, con
+   scroll horizontal si no caben todas las secciones. */
+@media (max-width: 860px) {
+  .marco {
+    flex-direction: column;
+  }
+
+  .lateral {
+    width: 100%;
+    height: auto;
+    position: static;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-right: 0;
+    border-bottom: 1px solid var(--borde);
+    overflow-x: auto;
+  }
+
+  .navegacion {
+    flex-direction: row;
+  }
+
+  .enlace {
+    white-space: nowrap;
+  }
+
+  .contenido {
+    padding: 16px 14px 40px;
+  }
+}

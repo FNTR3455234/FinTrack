@@ -1,0 +1,93 @@
+/*
+  Estilos de tabla compartidos por las cinco pantallas que listan datos.
+
+  Es un modulo CSS sin componente: un <Tabla> generico que aceptara columnas,
+  celdas a medida y acciones por fila acabaria siendo mas dificil de leer que el
+  <table> que envuelve. Lo que se comparte de verdad es la apariencia, y eso es
+  justo lo que un modulo CSS puede compartir solo.
+*/
+
+/* La envoltura hace el scroll horizontal en pantallas estrechas. Va aqui y no
+   en la tabla porque un overflow sobre <table> no funciona en todos los
+   navegadores. */
+.envoltura {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.tabla th,
+.tabla td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--borde);
+  white-space: nowrap;
+}
+
+.tabla th {
+  font-size: 0.76rem;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--texto-tenue);
+  background: var(--superficie-alta);
+  position: sticky;
+  top: 0;
+}
+
+.tabla tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.tabla tbody tr:hover {
+  background: var(--superficie-alta);
+}
+
+/* Las columnas de dinero se alinean a la derecha: asi los puntos decimales
+   quedan en la misma vertical y las cifras se comparan de un vistazo. */
+.numero {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.ingreso {
+  color: var(--ingreso);
+  font-weight: 600;
+}
+
+.gasto {
+  color: var(--gasto);
+  font-weight: 600;
+}
+
+/* La descripcion es lo unico que puede ser largo: se le deja crecer y se corta
+   con puntos suspensivos en vez de ensanchar la tabla entera. */
+.principal {
+  white-space: normal;
+  min-width: 200px;
+  font-weight: 550;
+}
+
+.tenue {
+  color: var(--texto-tenue);
+}
+
+.acciones {
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+.punto {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-right: 7px;
+  vertical-align: -1px;
+}

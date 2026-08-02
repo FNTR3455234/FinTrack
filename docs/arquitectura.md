@@ -26,6 +26,29 @@ handlers  ->  servicios  ->  repositorios  ->  MongoDB
 
 _(Pendiente: detallar el contrato de cada capa con ejemplos reales de código.)_
 
+## Capas del frontend
+
+El mismo principio, en el otro lado del cable:
+
+```
+paginas  ->  hooks  ->  api  ->  axios  ->  HTTP
+(vista)      (estado)   (endpoints)
+```
+
+- **paginas** — la vista y el estado de la pantalla. No arman URLs ni tocan `localStorage`.
+- **componentes** — lo que se repite (`Boton`, `Campo`, `Modal`, `Tarjeta`, las gráficas). Nunca
+  importan de una página.
+- **hooks** — `usePeticion` (leer: datos, cargando, error, recargar, con cancelación),
+  `useAccion` (escribir: ocupado y error), `usePeriodo`, `useRetardo`.
+- **api** — una función por endpoint. Devuelven ya el contenido de `datos`: el sobre
+  `{ datos, meta }` es un detalle del transporte y no llega a los componentes.
+- **contexto** — `AuthContexto` es el **único** sitio que escribe o borra tokens; `TemaContexto`
+  es el único que toca el atributo `data-tema` de `<html>`.
+
+El interceptor de `api/cliente.js` es la pieza con más reglas del cliente: adjunta el token,
+renueva **una sola vez por petición** ante un `401` y comparte una única promesa de refresco entre
+las peticiones que fallen a la vez (ver [decisión 027](decisiones.md)).
+
 ## Aislamiento por usuario
 
 Regla innegociable: ninguna consulta llega a MongoDB sin filtrar por `usuario_id`, y ese

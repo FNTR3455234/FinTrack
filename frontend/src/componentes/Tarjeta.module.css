@@ -1,0 +1,71 @@
+.tarjeta {
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  /* Sin esto, una tabla ancha desborda la tarjeta y se sale del redondeo. */
+  overflow: hidden;
+  min-width: 0;
+}
+
+.cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--borde);
+}
+
+.titulo {
+  font-size: 1rem;
+}
+
+.subtitulo {
+  font-size: 0.82rem;
+  color: var(--texto-tenue);
+  margin-top: 2px;
+}
+
+.cuerpo {
+  padding: 16px;
+  min-width: 0;
+}
+
+.cifra {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+}
+
+.rotulo {
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--texto-tenue);
+}
+
+.valor {
+  font-size: 1.45rem;
+  font-weight: 680;
+}
+
+.valor[data-tono='ingreso'] {
+  color: var(--ingreso);
+}
+
+.valor[data-tono='gasto'] {
+  color: var(--gasto);
+}
+
+.pieCifra {
+  font-size: 0.8rem;
+  color: var(--texto-tenue);
+}

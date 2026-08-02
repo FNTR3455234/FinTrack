@@ -1,0 +1,32 @@
+/*
+  Rejilla compartida por todos los formularios de la app (los de los modales y
+  los de las paginas). Solo coloca los campos: como se ve cada control ya lo
+  resuelve Campo.module.css.
+*/
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Dos campos cortos en la misma linea (tipo y monto, mes y año). Se apilan
+   solos en pantallas estrechas. */
+.par {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 520px) {
+  .par {
+    grid-template-columns: 1fr;
+  }
+}
+
+.acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}

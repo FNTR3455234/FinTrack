@@ -1,0 +1,77 @@
+.bloque {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.encabezado {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 0.9rem;
+}
+
+.nombre {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 600;
+}
+
+/* El punto usa el color que el usuario le puso a la categoria, y es lo unico
+   que lo usa: el estado del presupuesto se pinta aparte, para que un color de
+   categoria rojo no se confunda con "excedido". */
+.punto {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.cifras {
+  font-size: 0.85rem;
+}
+
+.tenue {
+  color: var(--texto-tenue);
+}
+
+.riel {
+  height: 8px;
+  background: var(--superficie-alta);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.relleno {
+  height: 100%;
+  border-radius: 999px;
+  transition: width var(--transicion);
+}
+
+.relleno[data-estado='ok'] {
+  background: var(--acento);
+}
+
+.relleno[data-estado='alerta'] {
+  background: var(--aviso);
+}
+
+.relleno[data-estado='excedido'] {
+  background: var(--peligro);
+}
+
+.pie {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.8rem;
+  color: var(--texto-tenue);
+}
+
+.pie [data-negativo] {
+  color: var(--peligro);
+  font-weight: 600;
+}

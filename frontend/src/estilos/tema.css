@@ -1,0 +1,117 @@
+/*
+  Paleta y medidas del proyecto, en un solo sitio.
+
+  Los dos temas definen exactamente los mismos nombres de variable: los modulos
+  CSS solo usan var(--...) y nunca preguntan que tema esta activo. Cambiar de
+  claro a oscuro es cambiar un atributo en <html>, sin volver a pintar nada a
+  mano.
+
+  El atributo lo escribe el script en linea de index.html antes del primer
+  pintado, y despues lo mantiene TemaContexto.
+*/
+
+:root,
+:root[data-tema='claro'] {
+  --fondo: #f6f7f9;
+  --superficie: #ffffff;
+  --superficie-alta: #f1f3f5;
+  --borde: #dfe3e8;
+  --texto: #1a1d21;
+  --texto-tenue: #5f6b7a;
+
+  --acento: #16a34a;
+  --acento-suave: #dcfce7;
+  --acento-texto: #ffffff;
+
+  --peligro: #dc2626;
+  --peligro-suave: #fee2e2;
+  --aviso: #d97706;
+  --aviso-suave: #fef3c7;
+  --info: #2563eb;
+  --info-suave: #dbeafe;
+
+  /* Ingresos y gastos tienen color propio y se usan en toda la app: en las
+     cifras, en las graficas y en el semaforo. */
+  --ingreso: #16a34a;
+  --gasto: #dc2626;
+
+  --sombra: 0 1px 2px rgba(16, 24, 40, 0.06), 0 1px 3px rgba(16, 24, 40, 0.1);
+  --sombra-alta: 0 4px 6px -1px rgba(16, 24, 40, 0.1), 0 2px 4px -2px rgba(16, 24, 40, 0.06);
+  --esqueleto: linear-gradient(90deg, var(--superficie-alta) 25%, var(--borde) 37%, var(--superficie-alta) 63%);
+}
+
+:root[data-tema='oscuro'] {
+  --fondo: #14171c;
+  --superficie: #1c2027;
+  --superficie-alta: #252b34;
+  --borde: #333b47;
+  --texto: #e8eaed;
+  --texto-tenue: #9aa5b1;
+
+  --acento: #22c55e;
+  --acento-suave: #14321f;
+  --acento-texto: #08130c;
+
+  --peligro: #f87171;
+  --peligro-suave: #3a1a1a;
+  --aviso: #fbbf24;
+  --aviso-suave: #3a2c11;
+  --info: #60a5fa;
+  --info-suave: #16283f;
+
+  --ingreso: #22c55e;
+  --gasto: #f87171;
+
+  --sombra: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --sombra-alta: 0 4px 10px rgba(0, 0, 0, 0.5);
+  --esqueleto: linear-gradient(90deg, var(--superficie-alta) 25%, var(--borde) 37%, var(--superficie-alta) 63%);
+}
+
+/*
+  Colores de las series de las graficas.
+
+  NO son --ingreso y --gasto, y esto tiene motivo. En una grafica de barras el
+  color es lo unico que dice cual serie es cual, y el verde #16A34A contra el
+  rojo #DC2626 se separan solo ΔE 5.0 para una persona con deuteranopia (medido
+  con el validador de paletas, no a ojo): son practicamente el mismo color. El
+  verde esmeralda contra el naranja llegan a ΔE 10.1 y pasan todas las
+  comprobaciones sobre las dos superficies, la clara y la oscura.
+
+  Por eso son los mismos dos valores en los dos temas: estan elegidos para
+  funcionar en ambos, no invertidos de uno a otro.
+
+  El verde y el rojo de siempre se quedan donde el color acompaña a una palabra
+  ("Ingreso", "Gasto", "Excedido") y por lo tanto no es la unica pista.
+*/
+:root,
+:root[data-tema='claro'],
+:root[data-tema='oscuro'] {
+  --serie-ingresos: #059669;
+  --serie-gastos: #ea580c;
+}
+
+:root {
+  --radio: 10px;
+  --radio-chico: 6px;
+  --espacio: 16px;
+  --ancho-maximo: 1180px;
+  --barra-lateral: 232px;
+
+  /* Una sola duracion para todas las transiciones: si todo tarda lo mismo, la
+     interfaz se siente de una pieza. */
+  --transicion: 140ms ease;
+}
+
+/*
+  Respeta a quien pidio menos movimiento en su sistema operativo. Va aqui y no
+  en cada componente para que no se pueda olvidar en uno.
+*/
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

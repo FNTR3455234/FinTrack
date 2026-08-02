@@ -35,6 +35,14 @@ func CORS(origenesPermitidos []string) gin.HandlerFunc {
 		"Authorization", "Content-Type", "Accept", CabeceraIDPeticion,
 	}, ", ")
 
+	// Encabezados que el navegador deja LEER al JavaScript de la pagina. Por
+	// defecto solo expone un puñado, y Content-Disposition no esta entre ellos:
+	// sin esta linea, el frontend descarga el CSV pero no puede saber con que
+	// nombre queria guardarlo el servidor.
+	expuestos := strings.Join([]string{
+		CabeceraIDPeticion, "Content-Disposition",
+	}, ", ")
+
 	return func(c *gin.Context) {
 		origen := c.GetHeader("Origin")
 
@@ -44,7 +52,7 @@ func CORS(origenesPermitidos []string) gin.HandlerFunc {
 			c.Header("Access-Control-Allow-Origin", origen)
 			c.Header("Access-Control-Allow-Methods", metodos)
 			c.Header("Access-Control-Allow-Headers", cabeceras)
-			c.Header("Access-Control-Expose-Headers", CabeceraIDPeticion)
+			c.Header("Access-Control-Expose-Headers", expuestos)
 			if !comodin {
 				c.Header("Access-Control-Allow-Credentials", "true")
 			}

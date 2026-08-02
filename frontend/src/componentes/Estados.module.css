@@ -1,0 +1,46 @@
+.esqueleto {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.linea {
+  border-radius: var(--radio-chico);
+  background: var(--esqueleto);
+  background-size: 400% 100%;
+  animation: brillo 1.3s ease infinite;
+}
+
+@keyframes brillo {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
+
+.vacio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--texto-tenue);
+}
+
+.vacioTitulo {
+  font-weight: 600;
+  color: var(--texto);
+}
+
+.vacioTexto {
+  font-size: 0.88rem;
+  max-width: 44ch;
+}
+
+.vacioAccion {
+  margin-top: 6px;
+}

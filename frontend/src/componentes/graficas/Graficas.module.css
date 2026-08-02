@@ -1,0 +1,100 @@
+/* Estilos compartidos por las graficas. Recharts dibuja el SVG; el color y la
+   tipografia salen de aqui, para que el tema claro y el oscuro no necesiten dos
+   configuraciones distintas. */
+
+.contenedor {
+  width: 100%;
+  /* La altura incluye la banda de las etiquetas del eje X. Si solo midiera el
+     area de trazado, la tarjeta acabaria con un scroll vertical minusculo. */
+  height: 260px;
+}
+
+.leyenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  padding-top: 12px;
+  font-size: 0.82rem;
+  color: var(--texto-tenue);
+}
+
+.claveLeyenda {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+/* El cuadrito de color es lo unico que lleva el color de la serie: el texto se
+   queda en el color de texto normal. Un amarillo o un aqua como texto sobre la
+   superficie no se leen. */
+.muestra {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.globo {
+  padding: 9px 11px;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-chico);
+  box-shadow: var(--sombra-alta);
+  font-size: 0.82rem;
+  color: var(--texto);
+}
+
+.globoTitulo {
+  font-weight: 650;
+  margin-bottom: 5px;
+}
+
+.globoTitulo::first-letter {
+  text-transform: uppercase;
+}
+
+.globoFila {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.globoValor {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+/* La tabla equivalente a la grafica. Va dentro de un <details> para no ocupar
+   sitio, pero existe siempre: es la version de los datos que funciona sin
+   color, con lector de pantalla y en una impresion en blanco y negro. */
+.detalle {
+  margin-top: 12px;
+  font-size: 0.85rem;
+}
+
+.detalle summary {
+  cursor: pointer;
+  color: var(--texto-tenue);
+  font-size: 0.82rem;
+}
+
+.tablaDatos {
+  width: 100%;
+  margin-top: 8px;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.tablaDatos th,
+.tablaDatos td {
+  padding: 5px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--borde);
+}
+
+.tablaDatos td:not(:first-child),
+.tablaDatos th:not(:first-child) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}

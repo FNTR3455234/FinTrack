@@ -1,0 +1,73 @@
+/* Estilos compartidos por el login y el registro: son la misma pantalla con un
+   formulario distinto. */
+
+.pantalla {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+}
+
+.caja {
+  width: min(400px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 26px;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra-alta);
+}
+
+.marca {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.logo {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  background: var(--acento);
+  color: var(--acento-texto);
+  border-radius: 9px;
+  font-weight: 800;
+}
+
+.intro {
+  font-size: 0.9rem;
+  color: var(--texto-tenue);
+}
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pie {
+  font-size: 0.88rem;
+  color: var(--texto-tenue);
+  text-align: center;
+}
+
+/* Datos del usuario de ejemplo que carga la semilla. Se muestran a proposito:
+   quien revisa el proyecto tiene que poder entrar sin buscar en el README. */
+.demo {
+  padding: 10px 12px;
+  background: var(--superficie-alta);
+  border-radius: var(--radio-chico);
+  font-size: 0.82rem;
+  color: var(--texto-tenue);
+  line-height: 1.6;
+}
+
+.demo code {
+  color: var(--texto);
+  font-size: 0.85em;
+}

@@ -3,7 +3,7 @@
 Aplicación web de finanzas personales y presupuestos: registra tus ingresos y gastos, organízalos
 por cuentas y categorías, ponles un límite mensual y mira a dónde se te va el dinero.
 
-> **Estado:** en desarrollo. Fases 0 a 6 de 10 completadas — ver la [tabla de avance](#avance-por-fases).
+> **Estado:** en desarrollo. Fases 0 a 7 de 10 completadas — ver la [tabla de avance](#avance-por-fases).
 
 ## Stack
 
@@ -26,18 +26,27 @@ cd FinTrack
 # 1. Levanta MongoDB (la primera vez crea el esquema y carga los datos de ejemplo solo)
 make up                 # Windows sin make:  .\make.ps1 up
 
-# 2. Configura el backend (a partir de la fase 2)
+# 2. Configura el backend
 cp backend/.env.example backend/.env
 
-# 3. Para recargar el esquema y los datos de ejemplo cuando quieras
-make seed
+# 3. Arranca la API en http://localhost:8080
+make dev
+
+# 4. En otra terminal, arranca el frontend en http://localhost:5173
+make web
 ```
 
 Mongo queda escuchando en `localhost:27017` con el usuario `fintrack_admin`. Para detenerlo:
 `make down` (los datos se conservan) o `docker compose -f docker-compose.dev.yml down -v` (los borra).
+Para recargar el esquema y los datos de ejemplo cuando quieras: `make seed`.
 
 **Usuario de ejemplo:** `demo@fintrack.mx` / `Demo1234!` — trae 6 meses de historia
 (3 cuentas, 10 categorías, 120 transacciones y 6 presupuestos).
+
+> La semilla está anclada a **julio de 2026** (`ANIO_FINAL` y `MES_FINAL` en
+> `database/02_insertar_datos.js`). El tablero abre en el mes en curso, así que si hoy es un mes
+> posterior verás ceros hasta pulsar la flecha de mes anterior; cambiando esas dos líneas y
+> volviendo a correr `make seed` los datos se re-anclan.
 
 El stack completo en contenedores (`docker compose up` y listo) llega en la fase 8.
 
@@ -50,6 +59,7 @@ Los mismos targets existen en `Makefile` (Linux/macOS/CI) y en `make.ps1` (Windo
 | `make up` / `make down` | Levanta o detiene MongoDB | fase 0 |
 | `make seed` | Recrea el esquema y carga los datos semilla | fase 1 |
 | `make dev` | Levanta Mongo y arranca la API | fase 2 |
+| `make web` | Arranca el frontend de Vite | fase 7 |
 | `make lint` | `go vet` + `golangci-lint` | fase 2 |
 | `make test` | Pruebas de Go con cobertura | fase 3 |
 | `make test-integracion` | Todas las pruebas, incluidas las que usan MongoDB | fase 4 |
@@ -58,6 +68,18 @@ Los mismos targets existen en `Makefile` (Linux/macOS/CI) y en `make.ps1` (Windo
 | `make postman` | Corre la colección de Postman con Newman | fase 6 |
 
 `make help` (o `.\make.ps1`) lista todo.
+
+## La aplicación
+
+Con Mongo, la API y el frontend corriendo, entra en **<http://localhost:5173>**.
+
+| Pantalla | Qué hay |
+|---|---|
+| Tablero | Cifras del mes, reparto de gastos, seis meses de historia y las barras de presupuesto |
+| Movimientos | Listado filtrable y paginado, alta y edición, exportar e importar CSV |
+| Presupuestos | Límites del mes con su semáforo (en orden / cerca del límite / excedido) |
+| Reportes | Las dos consultas relacionales, la tendencia y el saldo de cada cuenta |
+| Cuentas y Categorías | Los catálogos, con archivado en lugar de borrado cuando hay movimientos |
 
 ## Documentación de la API
 
@@ -80,7 +102,7 @@ navegador.
 |---|---|---|
 | 1 | Base de datos: modelo, scripts de creación, semilla y respaldo | [`database/README.md`](database/README.md) ✅ |
 | 2 | Backend: API REST en Go | [`backend/README.md`](backend/README.md) ✅ |
-| 3 | Frontend: cliente en React | `frontend/README.md` _(fase 7)_ |
+| 3 | Frontend: cliente en React | [`frontend/README.md`](frontend/README.md) ✅ |
 | 4 | Pruebas: colección de Postman | [`postman/README.md`](postman/README.md) ✅ |
 
 ## Avance por fases
@@ -94,7 +116,7 @@ navegador.
 | 4 | CRUD de cuentas, categorías y transacciones con filtros y paginación | ✅ |
 | 5 | Presupuestos, consultas relacionales, resumen, tendencia y alertas | ✅ |
 | 6 | Exportar/importar CSV, Swagger, colección de Postman | ✅ |
-| 7 | Frontend completo | ⏳ |
+| 7 | Frontend completo: React + Vite, tema claro/oscuro, gráficas y CSV | ✅ |
 | 8 | Dockerfiles, Compose completo, CI, arquitectura | ⏳ |
 | 9 | Metas de ahorro | ⏳ |
 | 10 | Accesibilidad, rendimiento, seguridad y guía de despliegue | ⏳ |

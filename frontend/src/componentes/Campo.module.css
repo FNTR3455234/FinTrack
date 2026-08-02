@@ -1,0 +1,61 @@
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.etiqueta {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--texto-tenue);
+}
+
+.control {
+  width: 100%;
+  padding: 8px 10px;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-chico);
+  color: var(--texto);
+  transition: border-color var(--transicion);
+}
+
+.control:hover:not(:disabled) {
+  border-color: var(--texto-tenue);
+}
+
+.control:disabled {
+  background: var(--superficie-alta);
+  color: var(--texto-tenue);
+  cursor: not-allowed;
+}
+
+/* El borde rojo acompaña al mensaje de error, nunca lo sustituye: el color solo
+   no es informacion accesible. */
+.control[data-error] {
+  border-color: var(--peligro);
+}
+
+/* El selector de color no se ve bien con relleno: se le da su propia caja. */
+.control[type='color'] {
+  height: 38px;
+  padding: 3px;
+  cursor: pointer;
+}
+
+textarea.control {
+  min-height: 76px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.ayuda {
+  font-size: 0.78rem;
+  color: var(--texto-tenue);
+}
+
+.error {
+  font-size: 0.78rem;
+  color: var(--peligro);
+}

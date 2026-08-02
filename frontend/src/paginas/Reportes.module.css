@@ -1,0 +1,39 @@
+.pila {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: opacity var(--transicion);
+}
+
+.pila[data-cargando] {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+/* La grafica y su tabla, lado a lado en pantallas anchas y una encima de la
+   otra cuando no caben. */
+.dosColumnas {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(300px, 1.3fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.grafica {
+  min-width: 0;
+}
+
+@media (max-width: 820px) {
+  .dosColumnas {
+    grid-template-columns: 1fr;
+  }
+}
+
+.selectorMeses select {
+  padding: 6px 10px;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-chico);
+  font-size: 0.85rem;
+  color: var(--texto);
+}

@@ -1,0 +1,51 @@
+.paginacion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  border-top: 1px solid var(--borde);
+}
+
+.resumen {
+  padding: 12px 16px;
+  font-size: 0.82rem;
+  color: var(--texto-tenue);
+}
+
+/* Dentro de la barra completa el resumen ya tiene el relleno del contenedor. */
+.paginacion .resumen {
+  padding: 0;
+}
+
+.controles {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.boton {
+  padding: 6px 12px;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-chico);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.boton:hover:not(:disabled) {
+  background: var(--superficie-alta);
+}
+
+.boton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.actual {
+  font-size: 0.85rem;
+  color: var(--texto-tenue);
+  white-space: nowrap;
+}

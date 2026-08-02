@@ -136,6 +136,17 @@ func TestCORS_AutorizaUnOrigenDeLaLista(t *testing.T) {
 	assert.Equal(t, "Origin", grabadora.Header().Get("Vary"))
 }
 
+func TestCORS_ExponeElNombreDelArchivoDescargado(t *testing.T) {
+	grabadora := pedirConOrigen(t, http.MethodGet, "http://localhost:5173")
+
+	// Sin Content-Disposition en la lista de expuestos, el frontend descarga el
+	// CSV pero no puede leer con que nombre queria guardarlo el servidor: el
+	// navegador esconde ese encabezado salvo que se autorice explicitamente.
+	expuestos := grabadora.Header().Get("Access-Control-Expose-Headers")
+	assert.Contains(t, expuestos, "Content-Disposition")
+	assert.Contains(t, expuestos, CabeceraIDPeticion)
+}
+
 func TestCORS_NoAutorizaUnOrigenQueNoEstaEnLaLista(t *testing.T) {
 	grabadora := pedirConOrigen(t, http.MethodGet, "http://sitio-malicioso.com")
 

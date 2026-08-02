@@ -1,0 +1,28 @@
+.pantalla {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+
+.rueda {
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--borde);
+  border-top-color: var(--acento);
+  border-radius: 50%;
+  animation: girar 750ms linear infinite;
+}
+
+@keyframes girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.texto {
+  color: var(--texto-tenue);
+  font-size: 0.9rem;
+}
