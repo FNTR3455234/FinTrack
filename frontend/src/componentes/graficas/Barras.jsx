@@ -26,7 +26,13 @@ export default function Barras({ serie, moneda }) {
 
   return (
     <>
-      <div className={estilos.contenedor}>
+      {/* Igual que en el pastel: una sola imagen con nombre, y los numeros en
+          la tabla de abajo. */}
+      <div
+        className={estilos.contenedor}
+        role="img"
+        aria-label="Grafica de ingresos contra gastos mes a mes. Los mismos datos estan en la tabla."
+      >
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={datos} margin={{ top: 8, right: 4, bottom: 0, left: -12 }} barGap={2}>
             <CartesianGrid {...REJILLA} />

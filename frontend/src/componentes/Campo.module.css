@@ -57,5 +57,5 @@ textarea.control {
 
 .error {
   font-size: 0.78rem;
-  color: var(--peligro);
+  color: var(--peligro-tinta);
 }

@@ -58,11 +58,11 @@
 }
 
 .valor[data-tono='ingreso'] {
-  color: var(--ingreso);
+  color: var(--ingreso-tinta);
 }
 
 .valor[data-tono='gasto'] {
-  color: var(--gasto);
+  color: var(--gasto-tinta);
 }
 
 .pieCifra {

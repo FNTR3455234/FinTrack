@@ -16,23 +16,23 @@
 .etiqueta[data-tono='ingreso'],
 .etiqueta[data-tono='cumplida'] {
   background: var(--acento-suave);
-  color: var(--ingreso);
+  color: var(--ingreso-tinta);
 }
 
 .etiqueta[data-tono='alerta'] {
   background: var(--aviso-suave);
-  color: var(--aviso);
+  color: var(--aviso-tinta);
 }
 
 .etiqueta[data-tono='excedido'],
 .etiqueta[data-tono='gasto'],
 .etiqueta[data-tono='vencida'] {
   background: var(--peligro-suave);
-  color: var(--gasto);
+  color: var(--gasto-tinta);
 }
 
 /* Una meta en curso no es ni buena ni mala noticia: es informacion. */
 .etiqueta[data-tono='en_curso'] {
   background: var(--info-suave);
-  color: var(--info);
+  color: var(--info-tinta);
 }

@@ -137,15 +137,50 @@ ratón y para los lectores de pantalla.
 
 ## Accesibilidad
 
+Auditado con **axe-core 4.12.1** (WCAG 2.1 A y AA, más buenas prácticas) sobre las doce
+combinaciones de pantalla y tema: **0 violaciones**.
+
+axe-core no es una dependencia del proyecto. Se instala aparte y se inyecta en la página con el
+protocolo de DevTools, para que una herramienta de auditoría no acabe dentro del bundle:
+
+```bash
+npm install axe-core                   # fuera del repo
+# se carga con Runtime.evaluate en un navegador sin ventana y se ejecuta axe.run()
+```
+
+### Lo que ya estaba
+
 - Enlace de "saltar al contenido" como primer elemento tabulable.
 - Un solo estilo de foco visible en los dos temas, con `:focus-visible`.
 - Toda etiqueta unida a su control por `id` (lo genera `useId`); los errores se anuncian con
   `role="alert"` y se enlazan con `aria-describedby`.
-- El semáforo de presupuestos y el tipo de movimiento **siempre llevan texto**, nunca solo
-  color.
+- El semáforo de presupuestos, el estado de las metas y el tipo de movimiento **siempre llevan
+  texto**, nunca solo color.
 - Las barras de progreso son `role="progressbar"` con sus valores.
 - El emoji de las categorías va con `aria-hidden`: es decoración, el nombre ya está ahí.
 - Se respeta `prefers-reduced-motion` y `prefers-color-scheme`.
+
+Verificado además a mano: el `<dialog>` nativo **atrapa el foco** (25 tabuladores seguidos siguen
+dentro) y Escape lo cierra; `lang="es"`; una sola `<h1>` por página; puntos de referencia
+`nav`, `main` y `header` con nombre.
+
+### Lo que la auditoría encontró, y no era poco
+
+**83 nodos con contraste insuficiente, todos en el tema claro.** La causa: los colores semánticos
+se usaban a la vez como relleno y como texto, y WCAG pide cosas distintas para cada uso. Medido:
+`#16a34a` sobre blanco da 3.30:1 y dentro de una etiqueta verde pálida 3.00:1, cuando se necesita
+4.5:1.
+
+Ahora cada color existe dos veces: `--ingreso` es el **relleno** (barras, puntos: sin texto encima
+le basta 3:1) y `--ingreso-tinta` es la **tinta** para texto, un paso más oscura. En el tema oscuro
+coinciden, porque sobre superficie oscura los mismos colores ya dan de 5.65:1 para arriba — por eso
+el tema oscuro pasó limpio desde el principio. Ver la
+[decisión 042](../docs/decisiones.md).
+
+**18 nodos sin texto alternativo en el pastel.** Recharts marca cada porción como `role="img"` sin
+etiqueta, así que un lector de pantalla anunciaba seis "imagen" seguidas. Ahora las porciones van
+con `aria-hidden` y el contenedor lleva `role="img"` con un nombre: es **una** imagen, y los
+números están en la tabla de siempre.
 
 ## Rendimiento
 
@@ -153,9 +188,20 @@ El tablero y los reportes se cargan con `lazy()`. Recharts pesa más que todo el
 aplicación junta, y así quien entra al login o registra un movimiento no lo descarga:
 
 ```
-index.js     265 kB  (87 kB gzip)   ← todo menos las gráficas
-Pastel.js    403 kB  (110 kB gzip)  ← recharts, solo en /tablero y /reportes
+index.js     287 kB  (92 kB gzip)   ← todo menos las gráficas
+Pastel.js    399 kB  (104 kB gzip)  ← recharts, solo en /tablero y /reportes
 ```
+
+Medido contra el stack en contenedores, con la caché del navegador desactivada:
+
+| | |
+|---|---|
+| Primer pintado con contenido | **60 ms** |
+| Lo que descarga un visitante sin sesión en `/login` | **108 kB** — dos archivos, y **ninguno** es el de las gráficas |
+| Respuesta de la API | 4.4 – 10.6 ms |
+
+Comprobado de verdad, no supuesto: en una sesión limpia, la lista de recursos que pidió el
+navegador en `/login` son `index.js` y `index.css`, y nada más.
 
 ## Limitaciones conocidas
 

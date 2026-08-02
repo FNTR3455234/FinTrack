@@ -673,6 +673,81 @@ justificarlas después. Formato por entrada: **decisión, contexto, alternativas
 
 ---
 
+## 042 — Cada color semántico existe dos veces: relleno y tinta
+
+**Fecha:** 2026-08-02 · **Fase:** 10
+
+- **Contexto:** la auditoría con axe-core encontró **83 nodos** con contraste insuficiente, todos
+  en el tema claro. El tema oscuro pasó limpio.
+- **Causa:** los colores semánticos se usaban a la vez como relleno (barras, puntos) y como texto
+  (cifras, etiquetas, avisos), y WCAG pide cosas distintas para cada uso. Medido:
+  `#16a34a` sobre blanco da **3.30:1** y dentro de una etiqueta verde pálida **3.00:1**; se
+  necesita 4.5:1. Lo mismo el blanco sobre el botón verde (3.29) y el rojo sobre rojo pálido (3.95).
+- **Decisión:** cada color semántico tiene dos variables. `--ingreso` es el **relleno** (sin texto
+  encima, le basta 3:1 frente a lo que tiene al lado) y `--ingreso-tinta` es la **tinta** para
+  texto, un paso más oscura. En el tema claro son distintas (600 y 700); en el oscuro coinciden,
+  porque sobre superficie oscura los mismos colores ya dan de 5.65:1 para arriba.
+- **Por qué así y no oscureciendo todo:** oscurecer las barras y los puntos habría apagado la
+  interfaz sin ganar nada, porque un relleno sin texto no está sujeto a esa regla. El acento sí se
+  oscureció entero, porque es fondo de botones con texto blanco encima.
+- **Por qué queda anotado:** las dos variables se leen como duplicación hasta que se sabe que WCAG
+  distingue texto de gráfico. El comentario está en `tema.css`, encima de la paleta.
+
+---
+
+## 043 — Cada porción del pastel se esconde de los lectores de pantalla
+
+**Fecha:** 2026-08-02 · **Fase:** 10
+
+- **Contexto:** la auditoría marcaba 18 nodos con `svg-img-alt`.
+- **Causa:** Recharts marca **cada porción** del pastel como `role="img"` sin texto alternativo. Un
+  lector de pantalla anunciaba seis "imagen" seguidas que no dicen nada.
+- **Decisión:** `aria-hidden` en cada porción, y `role="img"` con una etiqueta en el contenedor de
+  la gráfica. Para la tecnología de apoyo pasa a ser **una** imagen con nombre.
+- **Por qué la etiqueta no lleva las cifras:** están enteras en la tabla que ya acompaña a cada
+  gráfica ([decisión 029](#029--ninguna-gráfica-es-la-única-forma-de-leer-un-dato)). Meterlas
+  también en un `aria-label` sería leer los mismos números dos veces.
+
+---
+
+## 044 — Se actualiza `quic-go`, y se documenta por qué los avisos de React Router no aplican
+
+**Fecha:** 2026-08-02 · **Fase:** 10
+
+- **Contexto:** `govulncheck` y `npm audit` en la revisión de seguridad.
+- **`quic-go`:** vulnerabilidad **real y alcanzable** (GO-2026-5676), dependencia indirecta de Gin.
+  Se subió de `v0.59.0` a `v0.59.1` y el análisis quedó limpio. Sin discusión: si el analizador
+  encuentra una traza hasta nuestro código, se arregla.
+- **React Router:** los avisos hablan de *open redirect* al pasar destinos controlados por el
+  usuario a `<Link>` o `navigate()`, y de CSRF en modo RSC. **Ninguno aplica**: se revisaron los
+  destinos de navegación del proyecto uno por uno y todos son literales del propio código; no hay
+  SSR, ni RSC, ni nada que salga de la URL.
+- **Decisión:** quedarse en la versión más nueva (7.18) en vez de bajar a 7.11, que es lo que
+  sugiere `npm audit fix`. Bajar cambia un aviso por otros tres: 7.11 está dentro del rango de los
+  avisos anteriores.
+- **Por qué queda anotado:** "npm audit sale en rojo" es la clase de cosa que se pregunta en una
+  revisión. La respuesta no es *ignorarlo*, es haber mirado cada aviso y poder decir por qué no
+  alcanza a esta aplicación.
+
+---
+
+## 045 — Vite y React Router suben de versión mayor
+
+**Fecha:** 2026-08-02 · **Fase:** 10
+
+- **Contexto:** `npm audit` marcaba Vite 5 con severidad alta (recorrido de rutas en el servidor de
+  desarrollo, fuga de hash NTLM en Windows, salto de `server.fs.deny`).
+- **Matiz:** las tres son **solo del servidor de desarrollo**. Vite es una dependencia de
+  desarrollo y no llega a producción: la imagen sirve archivos estáticos con nginx y no lleva Node.
+  El riesgo real es para la máquina de quien programa, no para el despliegue.
+- **Decisión:** actualizar igual, a Vite 8 y React Router 7, porque la aplicación compiló y pasó
+  las pruebas **sin tocar una sola línea de código**.
+- **Por qué:** la alternativa era arrastrar dos avisos hasta la entrega a cambio de nada. Si la
+  actualización hubiera pedido cambios de código en la última fase, la decisión habría sido la
+  contraria: documentarlo y dejarlo.
+
+---
+
 ## Pendientes anotados (se resuelven en su fase)
 
 - **Fase 3 — Refresh token sin estado:** el refresh token no se guarda en la base, así que se puede

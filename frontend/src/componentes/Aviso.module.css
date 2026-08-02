@@ -12,13 +12,13 @@
 .aviso[data-tono='error'] {
   background: var(--peligro-suave);
   border-color: var(--peligro);
-  color: var(--peligro);
+  color: var(--peligro-tinta);
 }
 
 .aviso[data-tono='alerta'] {
   background: var(--aviso-suave);
   border-color: var(--aviso);
-  color: var(--aviso);
+  color: var(--aviso-tinta);
 }
 
 .aviso[data-tono='exito'] {
@@ -30,7 +30,7 @@
 .aviso[data-tono='info'] {
   background: var(--info-suave);
   border-color: var(--info);
-  color: var(--info);
+  color: var(--info-tinta);
 }
 
 .texto {

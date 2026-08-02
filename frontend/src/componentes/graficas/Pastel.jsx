@@ -28,7 +28,20 @@ export default function Pastel({ gastos, moneda, conTabla = true }) {
 
   return (
     <>
-      <div className={estilos.contenedor}>
+      {/*
+        role="img" con su etiqueta: para un lector de pantalla esto es UNA
+        imagen con nombre, no un monton de <path> sueltos. Recharts marca cada
+        porcion como imagen sin texto alternativo, y sin esto se anuncian seis
+        "imagen" seguidas que no dicen nada.
+
+        Los numeros no van en la etiqueta: estan enteros en la tabla de abajo,
+        que es donde se pueden leer uno por uno.
+      */}
+      <div
+        className={estilos.contenedor}
+        role="img"
+        aria-label="Grafica de reparto del gasto por categoria. Los mismos datos estan en la tabla."
+      >
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -47,7 +60,11 @@ export default function Pastel({ gastos, moneda, conTabla = true }) {
               isAnimationActive={false}
             >
               {porciones.map((porcion) => (
-                <Cell key={porcion.nombre} fill={porcion.color} />
+                // aria-hidden en cada porcion: Recharts las marca una por una
+                // como role="img" sin texto alternativo, y un lector de
+                // pantalla acabaria anunciando seis "imagen" seguidas. El
+                // nombre lo pone el contenedor de aqui arriba, una sola vez.
+                <Cell key={porcion.nombre} fill={porcion.color} aria-hidden="true" />
               ))}
             </Pie>
 

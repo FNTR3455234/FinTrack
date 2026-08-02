@@ -67,7 +67,7 @@
 
 .monto {
   font-weight: 650;
-  color: var(--ingreso);
+  color: var(--ingreso-tinta);
 }
 
 .fecha {

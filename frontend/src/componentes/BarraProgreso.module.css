@@ -92,6 +92,6 @@
 }
 
 .pie [data-negativo] {
-  color: var(--peligro);
+  color: var(--peligro-tinta);
   font-weight: 600;
 }

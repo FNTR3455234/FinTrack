@@ -226,6 +226,78 @@ sentido gastarlos si las pruebas unitarias ya fallaron. Las pruebas de integraci
 real y no un doble: comprueban agregaciones, índices únicos y el `$jsonSchema`, y eso un doble no
 lo puede imitar sin acabar imitando también los errores.
 
+## Revisión de seguridad
+
+Repaso hecho en la fase 10, con lo que se comprobó y cómo.
+
+| Frente | Cómo está resuelto | Comprobado con |
+|---|---|---|
+| **Aislamiento por usuario** | El `usuario_id` sale del token; los DTO de entrada ni siquiera tienen el campo. Editar algo ajeno da 404, no 403 | Pruebas de integración con dos usuarios reales sobre las seis agregaciones |
+| **Inyección NoSQL** | Los cuerpos se deserializan a structs de Go con tipos: `{"email":{"$ne":null}}` no puede convertirse en `string`. Es inmunidad estructural, no un filtro | `POST /auth/login` con operadores de Mongo → `400 JSON_INVALIDO` |
+| **Inyección de expresión regular** | La búsqueda pasa por `regexp.QuoteMeta` antes de llegar al `$regex` | `?busqueda=.*` devuelve **0** resultados, no los 120 |
+| **Contraseñas** | bcrypt con el coste por defecto (10); el hash lleva `json:"-"` y no se serializa nunca | `GET /auth/perfil` no incluye `password` |
+| **Fuerza bruta** | 20 peticiones por minuto e IP en `/auth` | El intento 20 responde `429 DEMASIADOS_INTENTOS` |
+| **Tokens** | Dos secretos distintos y un campo `tipo` dentro del token: un refresco no vale como acceso ni aunque se programe mal la validación | Pruebas de `servicios/tokens` |
+| **Cabeceras** | CSP `default-src 'self'`, `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy` — también en las respuestas de la API, porque pasan por nginx | `curl -D -` sobre `/` y sobre `/api/v1/health` |
+| **Superficie expuesta** | Solo el puerto de nginx. MongoDB y la API no son alcanzables desde fuera de la red de Docker | `docker ps` y `docker compose config` |
+| **Contenedores** | `api` corre como `fintrack` (uid 10001) y `web` como `nginx`; ninguno como root. La imagen de la API no lleva compilador, ni código fuente, ni `.env` | `docker exec … id` y `find /` dentro de la imagen |
+| **Secretos** | Nada versionado. El `.env.example` trae valores que el servidor **rechaza** en modo release | `git ls-files`, `git check-ignore` |
+| **Errores** | Un 5xx responde un mensaje genérico; el detalle solo va a la bitácora | `respuestas.Fallo` y sus pruebas |
+
+### Dependencias
+
+`govulncheck` encontró **una vulnerabilidad real**: `quic-go v0.59.0` (GO-2026-5676, agotamiento de
+memoria por expansión de tráilers QPACK en HTTP/3), que entra como dependencia indirecta de Gin.
+Se subió a `v0.59.1` y el análisis quedó limpio.
+
+En el frontend, `npm audit` reporta avisos sobre React Router que **no aplican a esta aplicación**:
+hablan de *open redirect* al pasar destinos controlados por el usuario a `<Link>` o `navigate()`,
+y de CSRF en modo RSC. Aquí **todos los destinos son literales del propio código** (`/login`,
+`/metas`…), no hay SSR ni RSC, y nada de la URL se usa para navegar. Se dejó la versión más nueva
+(7.18) en lugar de bajar a 7.11, que cambia un aviso por otro. Ver la
+[decisión 044](decisiones.md).
+
+### Lo que sigue abierto
+
+Está detallado en la [guía de despliegue](despliegue.md#8-lo-que-este-despliegue-no-resuelve): sin
+alta disponibilidad, tokens de refresco no revocables antes de sus 7 días, sin recuperación de
+contraseña, sin límite de peticiones fuera de `/auth` y sin métricas.
+
+## Rendimiento
+
+Medido contra el stack en contenedores con la semilla cargada (120 transacciones, 9 aportaciones).
+
+| Medida | Resultado |
+|---|---|
+| Primer pintado, visitante nuevo y sin caché | **60 ms** |
+| Lo que descarga quien entra al login | **108 kB** (102 de JS + 6 de CSS, comprimidos) |
+| Peso del bundle sin comprimir → con gzip | 287 kB → **92 kB** |
+| Trozo de las gráficas | 399 kB, **solo al abrir el tablero o los reportes** |
+| Las cinco consultas de reporte | 4.8 – 10.6 ms |
+| Listado de transacciones paginado | 4.4 ms |
+
+Ninguna consulta hace un recorrido completo de colección. `explain()` sobre las más pesadas:
+
+| Consulta | Plan |
+|---|---|
+| Listado de transacciones | `LIMIT ← FETCH ← IXSCAN [idx_transacciones_usuario_fecha]` — 20 documentos examinados para devolver 20 |
+| Gastos por categoría | `IXSCAN [idx_transacciones_usuario_fecha]` |
+| Aportaciones de una meta | `IXSCAN [idx_aportaciones_usuario_meta]` — 4 examinados, 4 devueltos |
+| Login por email | `IXSCAN [idx_usuarios_email_unico]` — 1 examinado |
+
+El índice `(usuario_id, fecha)` sirve a la vez para filtrar por dueño y para ordenar, así que el
+listado principal no necesita ordenar en memoria.
+
+## Accesibilidad
+
+Auditado con **axe-core 4.12.1** (reglas WCAG 2.1 A y AA, más las de buenas prácticas) sobre las
+doce combinaciones de pantalla y tema: **0 violaciones**. El detalle de lo que se corrigió está en
+[`frontend/README.md`](../frontend/README.md#accesibilidad).
+
+axe-core no es una dependencia del proyecto: se instala aparte y se inyecta en la página con el
+protocolo de DevTools, para que una herramienta de auditoría no acabe dentro del bundle que se
+despliega.
+
 ## Decisiones
 
 Ver [`decisiones.md`](decisiones.md).

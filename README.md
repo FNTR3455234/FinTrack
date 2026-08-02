@@ -3,7 +3,7 @@
 Aplicación web de finanzas personales y presupuestos: registra tus ingresos y gastos, organízalos
 por cuentas y categorías, ponles un límite mensual y mira a dónde se te va el dinero.
 
-> **Estado:** en desarrollo. Fases 0 a 9 de 10 completadas — ver la [tabla de avance](#avance-por-fases).
+> **Estado:** completo. Las 11 fases (0 a 10) terminadas — ver la [tabla de avance](#avance-por-fases).
 
 ## Stack
 
@@ -148,12 +148,29 @@ pull request:
 | `imagenes` | Que los dos `Dockerfile` construyen |
 | `contrato` | Levanta el **stack completo** y le pasa la colección de Postman |
 
+## Calidad
+
+Todo lo de esta tabla está medido contra el stack en contenedores, no estimado.
+
+| | |
+|---|---|
+| Pruebas del backend | 10 paquetes en verde · **83.6 %** de cobertura · las de integración contra un MongoDB de verdad |
+| Contrato de la API | 53 peticiones y **139 aserciones** de Postman, 0 fallos |
+| Accesibilidad | **0 violaciones** de axe-core (WCAG 2.1 AA) en las 12 combinaciones de pantalla y tema |
+| Rendimiento | Primer pintado en **60 ms** · 108 kB en la primera carga · API entre 4 y 11 ms |
+| Consultas | Ninguna recorre la colección entera: `explain()` muestra `IXSCAN` en todas |
+| Seguridad | `govulncheck` limpio · contenedores sin root · un solo puerto publicado |
+
+El detalle, con cómo se midió cada cosa, está en
+[`docs/arquitectura.md`](docs/arquitectura.md#revisión-de-seguridad).
+
 ## Documentación
 
 | Documento | Contenido |
 |---|---|
-| [`docs/arquitectura.md`](docs/arquitectura.md) | Los tres contenedores, las capas, el aislamiento por usuario y el flujo de autenticación |
-| [`docs/decisiones.md`](docs/decisiones.md) | Bitácora de decisiones técnicas y su porqué |
+| [`docs/arquitectura.md`](docs/arquitectura.md) | Los tres contenedores, las capas, el aislamiento por usuario, la revisión de seguridad y las medidas de rendimiento |
+| [`docs/despliegue.md`](docs/despliegue.md) | Poner esto en un servidor: TLS, respaldos, actualizaciones y qué **no** resuelve |
+| [`docs/decisiones.md`](docs/decisiones.md) | Bitácora de las 45 decisiones técnicas y su porqué |
 | [`database/modelo.md`](database/modelo.md) | Diagrama entidad-relación, relaciones e índices |
 
 ### Entregables
@@ -179,7 +196,7 @@ pull request:
 | 7 | Frontend completo: React + Vite, tema claro/oscuro, gráficas y CSV | ✅ |
 | 8 | Imágenes multi-etapa, Compose completo, nginx, CI y arquitectura | ✅ |
 | 9 | Metas de ahorro: tercera consulta relacional, ritmo de ahorro y pantalla | ✅ |
-| 10 | Accesibilidad, rendimiento, seguridad y guía de despliegue | ⏳ |
+| 10 | Accesibilidad, rendimiento, revisión de seguridad y guía de despliegue | ✅ |
 
 ## Licencia
 

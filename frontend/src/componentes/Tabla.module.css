@@ -56,12 +56,12 @@
 }
 
 .ingreso {
-  color: var(--ingreso);
+  color: var(--ingreso-tinta);
   font-weight: 600;
 }
 
 .gasto {
-  color: var(--gasto);
+  color: var(--gasto-tinta);
   font-weight: 600;
 }
 

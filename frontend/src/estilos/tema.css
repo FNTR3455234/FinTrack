@@ -10,6 +10,27 @@
   pintado, y despues lo mantiene TemaContexto.
 */
 
+/*
+  RELLENO contra TINTA
+  --------------------
+  Cada color semantico existe dos veces, y no es duplicacion por gusto: WCAG
+  pide cosas distintas segun para que se use el color.
+
+    --ingreso        RELLENO. Barras, puntos, rectangulos. Como no lleva texto
+                     encima, le basta con 3:1 frente a lo que tiene al lado.
+    --ingreso-tinta  TINTA. Cifras, etiquetas, avisos. Necesita 4.5:1 sobre la
+                     superficie Y sobre su propio tono suave.
+
+  En el tema claro los dos valores son distintos: el verde #16a34a se lee
+  precioso como barra pero da 3.30:1 como texto sobre blanco y 3.00:1 dentro de
+  una etiqueta verde palida. Medido con la formula de WCAG, no a ojo. El paso
+  700 (#15803d) sube a 5.02 y 4.57 y sigue siendo el mismo verde.
+
+  En el tema oscuro coinciden: sobre una superficie oscura los mismos colores ya
+  dan entre 5.65 y 8.31, asi que no hace falta separarlos. Las variables existen
+  igual en los dos temas para que ningun modulo tenga que preguntar cual esta
+  activo.
+*/
 :root,
 :root[data-tema='claro'] {
   --fondo: #f6f7f9;
@@ -19,21 +40,28 @@
   --texto: #1a1d21;
   --texto-tenue: #5f6b7a;
 
-  --acento: #16a34a;
+  /* El acento SI es el paso oscuro: es fondo de botones con texto blanco
+     encima, y ahi el blanco sobre #16a34a se quedaba en 3.30:1. */
+  --acento: #15803d;
   --acento-suave: #dcfce7;
   --acento-texto: #ffffff;
 
   --peligro: #dc2626;
+  --peligro-tinta: #b91c1c;
   --peligro-suave: #fee2e2;
   --aviso: #d97706;
+  --aviso-tinta: #b45309;
   --aviso-suave: #fef3c7;
   --info: #2563eb;
+  --info-tinta: #1d4ed8;
   --info-suave: #dbeafe;
 
   /* Ingresos y gastos tienen color propio y se usan en toda la app: en las
      cifras, en las graficas y en el semaforo. */
   --ingreso: #16a34a;
+  --ingreso-tinta: #15803d;
   --gasto: #dc2626;
+  --gasto-tinta: #b91c1c;
 
   --sombra: 0 1px 2px rgba(16, 24, 40, 0.06), 0 1px 3px rgba(16, 24, 40, 0.1);
   --sombra-alta: 0 4px 6px -1px rgba(16, 24, 40, 0.1), 0 2px 4px -2px rgba(16, 24, 40, 0.06);
@@ -52,15 +80,22 @@
   --acento-suave: #14321f;
   --acento-texto: #08130c;
 
+  /* Aqui relleno y tinta coinciden: sobre superficie oscura estos mismos
+     colores ya dan de 5.65:1 para arriba como texto. */
   --peligro: #f87171;
+  --peligro-tinta: #f87171;
   --peligro-suave: #3a1a1a;
   --aviso: #fbbf24;
+  --aviso-tinta: #fbbf24;
   --aviso-suave: #3a2c11;
   --info: #60a5fa;
+  --info-tinta: #60a5fa;
   --info-suave: #16283f;
 
   --ingreso: #22c55e;
+  --ingreso-tinta: #22c55e;
   --gasto: #f87171;
+  --gasto-tinta: #f87171;
 
   --sombra: 0 1px 2px rgba(0, 0, 0, 0.4);
   --sombra-alta: 0 4px 10px rgba(0, 0, 0, 0.5);
