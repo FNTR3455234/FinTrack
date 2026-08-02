@@ -36,6 +36,8 @@ function fechaUTC(anio, mes, dia) {
 }
 
 print("Limpiando datos previos del usuario demo...");
+bd.aportaciones.deleteMany({ usuario_id: ID_USUARIO });
+bd.metas.deleteMany({ usuario_id: ID_USUARIO });
 bd.transacciones.deleteMany({ usuario_id: ID_USUARIO });
 bd.presupuestos.deleteMany({ usuario_id: ID_USUARIO });
 bd.categorias.deleteMany({ usuario_id: ID_USUARIO });
@@ -162,8 +164,102 @@ bd.presupuestos.insertMany(
   }))
 );
 
+// --- metas de ahorro --------------------------------------------------------
+// Tres metas elegidas para que el reporte de progreso muestre los tres estados:
+// una cumplida, una en curso y una ya vencida sin completar.
+//
+// Las fechas se calculan a partir del ultimo mes de la semilla, no a mano, para
+// que sigan teniendo sentido si se re-ancla la semilla (ANIO_FINAL / MES_FINAL).
+const metas = [
+  {
+    _id: ObjectId("650400000000000000000001"),
+    nombre: "Fondo de emergencia",
+    objetivo: 30000,
+    mesesDesdeElFinal: 6, // vence dentro de medio año
+    color: "#0891B2",
+    notas: "Tres meses de gastos fijos.",
+    // 18 500 de 30 000 -> 61.7 %, en curso
+    aportaciones: [
+      { mesesAntes: 5, dia: 15, monto: 4000, nota: "Aguinaldo" },
+      { mesesAntes: 3, dia: 15, monto: 6000, nota: null },
+      { mesesAntes: 1, dia: 10, monto: 5500, nota: null },
+      { mesesAntes: 0, dia: 5, monto: 3000, nota: null },
+    ],
+  },
+  {
+    _id: ObjectId("650400000000000000000002"),
+    nombre: "Laptop nueva",
+    objetivo: 22000,
+    mesesDesdeElFinal: 2,
+    color: "#7C3AED",
+    notas: null,
+    // 22 500 de 22 000 -> 102.3 %, cumplida
+    aportaciones: [
+      { mesesAntes: 4, dia: 20, monto: 7500, nota: null },
+      { mesesAntes: 2, dia: 20, monto: 7500, nota: null },
+      { mesesAntes: 0, dia: 20, monto: 7500, nota: "Ultima aportacion" },
+    ],
+  },
+  {
+    _id: ObjectId("650400000000000000000003"),
+    nombre: "Viaje de fin de año",
+    objetivo: 25000,
+    mesesDesdeElFinal: -1, // vencio el mes pasado
+    color: "#EA580C",
+    notas: "No alcanzo: se pospone al siguiente periodo.",
+    // 9 000 de 25 000 -> 36 %, vencida
+    aportaciones: [
+      { mesesAntes: 4, dia: 28, monto: 5000, nota: null },
+      { mesesAntes: 2, dia: 28, monto: 4000, nota: null },
+    ],
+  },
+];
+
+// mesRelativo desplaza N meses respecto al ultimo mes de la semilla y devuelve
+// { anio, mes } normalizados, para no pelearse con los cambios de año.
+function mesRelativo(desplazamiento) {
+  const total = ANIO_FINAL * 12 + (MES_FINAL - 1) + desplazamiento;
+  return { anio: Math.floor(total / 12), mes: (total % 12) + 1 };
+}
+
+const documentosMetas = [];
+const documentosAportaciones = [];
+
+metas.forEach((m) => {
+  const limite = mesRelativo(m.mesesDesdeElFinal);
+  documentosMetas.push({
+    _id: m._id,
+    usuario_id: ID_USUARIO,
+    nombre: m.nombre,
+    monto_objetivo: pesos(m.objetivo),
+    fecha_limite: fechaUTC(limite.anio, limite.mes, 28),
+    color: m.color,
+    notas: m.notas,
+    archivada: false,
+    creado_en: ahora,
+    actualizado_en: ahora,
+  });
+
+  m.aportaciones.forEach((a) => {
+    const cuando = mesRelativo(-a.mesesAntes);
+    documentosAportaciones.push({
+      usuario_id: ID_USUARIO,
+      meta_id: m._id,
+      monto: pesos(a.monto),
+      fecha: fechaUTC(cuando.anio, cuando.mes, a.dia),
+      nota: a.nota,
+      creado_en: ahora,
+    });
+  });
+});
+
+bd.metas.insertMany(documentosMetas);
+bd.aportaciones.insertMany(documentosAportaciones);
+
 print("Semilla cargada para demo@fintrack.mx (clave: Demo1234!):");
 print("  cuentas:       " + bd.cuentas.countDocuments({ usuario_id: ID_USUARIO }));
 print("  categorias:    " + bd.categorias.countDocuments({ usuario_id: ID_USUARIO }));
 print("  transacciones: " + bd.transacciones.countDocuments({ usuario_id: ID_USUARIO }));
 print("  presupuestos:  " + bd.presupuestos.countDocuments({ usuario_id: ID_USUARIO }));
+print("  metas:         " + bd.metas.countDocuments({ usuario_id: ID_USUARIO }));
+print("  aportaciones:  " + bd.aportaciones.countDocuments({ usuario_id: ID_USUARIO }));

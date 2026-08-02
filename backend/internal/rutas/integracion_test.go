@@ -69,6 +69,8 @@ func routerReal(t *testing.T) *api {
 	repoTransacciones := repositorios.NuevoTransacciones(conexion.BD)
 	repoPresupuestos := repositorios.NuevoPresupuestos(conexion.BD)
 	repoReportes := repositorios.NuevoReportes(conexion.BD)
+	repoMetas := repositorios.NuevoMetas(conexion.BD)
+	repoAportaciones := repositorios.NuevoAportaciones(conexion.BD)
 
 	cfg := &config.Config{GinModo: gin.TestMode, CORSOrigenes: []string{"http://localhost:5173"}}
 	router := Configurar(cfg, Dependencias{
@@ -81,6 +83,10 @@ func routerReal(t *testing.T) *api {
 		Presupuestos:  servicios.NuevoPresupuestos(repoPresupuestos, repoCategorias),
 		Reportes:      servicios.NuevoReportes(repoReportes),
 		CSV:           servicios.NuevoCSV(repoTransacciones, repoCuentas, repoCategorias),
+		// El reloj se fija: las pruebas afirman "faltan 90 dias", y eso solo se
+		// puede comprobar si se sabe que dia es hoy.
+		Metas: servicios.NuevoMetas(repoMetas, repoAportaciones, repoReportes,
+			func() time.Time { return hoyDeLasPruebas }),
 	})
 
 	return &api{router: router, t: t}
@@ -136,6 +142,28 @@ func (a *api) crearCategoria(token, nombre, tipo string) string {
 		Nombre: nombre, Tipo: tipo, Color: "#EA580C", Icono: "🛒",
 	}, http.StatusCreated, &categoria)
 	return categoria.ID.Hex()
+}
+
+// crearMeta da de alta una meta de ahorro y devuelve su id.
+func (a *api) crearMeta(token, nombre string, objetivo float64, limite time.Time) string {
+	a.t.Helper()
+
+	var meta modelos.Meta
+	a.datos(http.MethodPost, "/api/v1/metas", token, modelos.PeticionMeta{
+		Nombre: nombre, MontoObjetivo: objetivo, FechaLimite: limite, Color: "#0891B2",
+	}, http.StatusCreated, &meta)
+	return meta.ID.Hex()
+}
+
+// aportar registra dinero apartado para una meta y devuelve el id de la
+// aportacion.
+func (a *api) aportar(token, metaID string, monto float64, fecha time.Time) string {
+	a.t.Helper()
+
+	var aportacion modelos.Aportacion
+	a.datos(http.MethodPost, "/api/v1/metas/"+metaID+"/aportaciones", token,
+		modelos.PeticionAportacion{Monto: monto, Fecha: fecha}, http.StatusCreated, &aportacion)
+	return aportacion.ID.Hex()
 }
 
 // movimiento arma el cuerpo de una transaccion.

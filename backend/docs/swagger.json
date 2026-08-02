@@ -977,6 +977,435 @@
                 }
             }
         },
+        "/metas": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Cada meta con lo que se lleva ahorrado, lo que falta, el porcentaje, el estado y a que ritmo mensual hay que ahorrar para llegar a tiempo. Cruza metas con aportaciones (consulta relacional 3).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "metas"
+                ],
+                "summary": "Listar metas de ahorro",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "Incluye tambien las archivadas",
+                        "name": "incluir_archivadas",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.Sobre"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "datos": {
+                                            "$ref": "#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.ListadoMetas"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "La fecha limite es obligatoria: sin ella no se puede calcular a que ritmo hay que ahorrar.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "metas"
+                ],
+                "summary": "Crear una meta de ahorro",
+                "parameters": [
+                    {
+                        "description": "Datos de la meta",
+                        "name": "cuerpo",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.PeticionMeta"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.Sobre"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "datos": {
+                                            "$ref": "#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.Meta"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError"
+                        }
+                    }
+                }
+            }
+        },
+        "/metas/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "El progreso mas el detalle de cada aportacion, que es lo que explica de donde sale la cifra. Responde 404 si la meta es de otro usuario.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "metas"
+                ],
+                "summary": "Obtener una meta con sus aportaciones",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Identificador de 24 caracteres",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.Sobre"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "datos": {
+                                            "$ref": "#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.MetaConAportaciones"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Las aportaciones no se tocan: subir el objetivo no borra lo ya ahorrado, solo cambia el porcentaje.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "metas"
+                ],
+                "summary": "Actualizar una meta",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Identificador de 24 caracteres",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Datos de la meta",
+                        "name": "cuerpo",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.PeticionMeta"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.Sobre"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "datos": {
+                                            "$ref": "#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.Meta"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Borra tambien sus aportaciones: una aportacion no significa nada sin su meta. A diferencia de cuentas y categorias, aqui no hay 409.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "metas"
+                ],
+                "summary": "Borrar una meta",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Identificador de 24 caracteres",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Borrada"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError"
+                        }
+                    }
+                }
+            }
+        },
+        "/metas/{id}/aportaciones": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Dinero apartado para la meta. NO es una transaccion y no toca el saldo de ninguna cuenta: apartar dinero no es gastarlo. Se permite pasarse del objetivo.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "metas"
+                ],
+                "summary": "Registrar una aportacion",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Identificador de la meta",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Monto, fecha y nota",
+                        "name": "cuerpo",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.PeticionAportacion"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.Sobre"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "datos": {
+                                            "$ref": "#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.Aportacion"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError"
+                        }
+                    }
+                }
+            }
+        },
+        "/metas/{id}/aportaciones/{aportacion}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Responde 404 si la aportacion no es de esa meta, aunque exista en otra.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "metas"
+                ],
+                "summary": "Borrar una aportacion",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Identificador de la meta",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Identificador de la aportacion",
+                        "name": "aportacion",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Borrada"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError"
+                        }
+                    }
+                }
+            }
+        },
         "/presupuestos": {
             "get": {
                 "security": [
@@ -2167,6 +2596,29 @@
                 }
             }
         },
+        "github_com_FNTR3455234_FinTrack_backend_internal_modelos.Aportacion": {
+            "type": "object",
+            "properties": {
+                "creado_en": {
+                    "type": "string"
+                },
+                "fecha": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "meta_id": {
+                    "type": "string"
+                },
+                "monto": {
+                    "type": "number"
+                },
+                "nota": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_FNTR3455234_FinTrack_backend_internal_modelos.Categoria": {
             "type": "object",
             "properties": {
@@ -2285,6 +2737,110 @@
                 }
             }
         },
+        "github_com_FNTR3455234_FinTrack_backend_internal_modelos.ListadoMetas": {
+            "type": "object",
+            "properties": {
+                "metas": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.ProgresoMeta"
+                    }
+                },
+                "resumen": {
+                    "$ref": "#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.ResumenMetas"
+                }
+            }
+        },
+        "github_com_FNTR3455234_FinTrack_backend_internal_modelos.Meta": {
+            "type": "object",
+            "properties": {
+                "actualizado_en": {
+                    "type": "string"
+                },
+                "archivada": {
+                    "type": "boolean"
+                },
+                "color": {
+                    "type": "string"
+                },
+                "creado_en": {
+                    "type": "string"
+                },
+                "fecha_limite": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "monto_objetivo": {
+                    "type": "number"
+                },
+                "nombre": {
+                    "type": "string"
+                },
+                "notas": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_FNTR3455234_FinTrack_backend_internal_modelos.MetaConAportaciones": {
+            "type": "object",
+            "properties": {
+                "ahorrado": {
+                    "description": "Lo que suma la agregacion.",
+                    "type": "number"
+                },
+                "aportaciones": {
+                    "type": "integer"
+                },
+                "archivada": {
+                    "type": "boolean"
+                },
+                "color": {
+                    "type": "string"
+                },
+                "detalle": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.Aportacion"
+                    }
+                },
+                "dias_restantes": {
+                    "type": "integer"
+                },
+                "estado": {
+                    "description": "Lo que añade el servicio a partir de la fecha de hoy.",
+                    "type": "string"
+                },
+                "fecha_limite": {
+                    "type": "string"
+                },
+                "meta_id": {
+                    "type": "string"
+                },
+                "monto_objetivo": {
+                    "type": "number"
+                },
+                "nombre": {
+                    "type": "string"
+                },
+                "notas": {
+                    "type": "string"
+                },
+                "porcentaje": {
+                    "type": "number"
+                },
+                "restante": {
+                    "type": "number"
+                },
+                "ritmo_mensual": {
+                    "type": "number"
+                },
+                "ultima_fecha": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_FNTR3455234_FinTrack_backend_internal_modelos.Periodo": {
             "type": "object",
             "properties": {
@@ -2310,6 +2866,25 @@
                     "type": "string",
                     "maxLength": 80,
                     "minLength": 2
+                }
+            }
+        },
+        "github_com_FNTR3455234_FinTrack_backend_internal_modelos.PeticionAportacion": {
+            "type": "object",
+            "required": [
+                "fecha",
+                "monto"
+            ],
+            "properties": {
+                "fecha": {
+                    "type": "string"
+                },
+                "monto": {
+                    "type": "number"
+                },
+                "nota": {
+                    "type": "string",
+                    "maxLength": 140
                 }
             }
         },
@@ -2392,6 +2967,38 @@
                 },
                 "password": {
                     "type": "string"
+                }
+            }
+        },
+        "github_com_FNTR3455234_FinTrack_backend_internal_modelos.PeticionMeta": {
+            "type": "object",
+            "required": [
+                "color",
+                "fecha_limite",
+                "monto_objetivo",
+                "nombre"
+            ],
+            "properties": {
+                "archivada": {
+                    "type": "boolean"
+                },
+                "color": {
+                    "type": "string"
+                },
+                "fecha_limite": {
+                    "type": "string"
+                },
+                "monto_objetivo": {
+                    "type": "number"
+                },
+                "nombre": {
+                    "type": "string",
+                    "maxLength": 80,
+                    "minLength": 1
+                },
+                "notas": {
+                    "type": "string",
+                    "maxLength": 500
                 }
             }
         },
@@ -2521,6 +3128,58 @@
                 }
             }
         },
+        "github_com_FNTR3455234_FinTrack_backend_internal_modelos.ProgresoMeta": {
+            "type": "object",
+            "properties": {
+                "ahorrado": {
+                    "description": "Lo que suma la agregacion.",
+                    "type": "number"
+                },
+                "aportaciones": {
+                    "type": "integer"
+                },
+                "archivada": {
+                    "type": "boolean"
+                },
+                "color": {
+                    "type": "string"
+                },
+                "dias_restantes": {
+                    "type": "integer"
+                },
+                "estado": {
+                    "description": "Lo que añade el servicio a partir de la fecha de hoy.",
+                    "type": "string"
+                },
+                "fecha_limite": {
+                    "type": "string"
+                },
+                "meta_id": {
+                    "type": "string"
+                },
+                "monto_objetivo": {
+                    "type": "number"
+                },
+                "nombre": {
+                    "type": "string"
+                },
+                "notas": {
+                    "type": "string"
+                },
+                "porcentaje": {
+                    "type": "number"
+                },
+                "restante": {
+                    "type": "number"
+                },
+                "ritmo_mensual": {
+                    "type": "number"
+                },
+                "ultima_fecha": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_FNTR3455234_FinTrack_backend_internal_modelos.PuntoTendencia": {
             "type": "object",
             "properties": {
@@ -2604,6 +3263,26 @@
                 },
                 "saldo_total": {
                     "type": "number"
+                }
+            }
+        },
+        "github_com_FNTR3455234_FinTrack_backend_internal_modelos.ResumenMetas": {
+            "type": "object",
+            "properties": {
+                "ahorrado": {
+                    "type": "number"
+                },
+                "cumplidas": {
+                    "type": "integer"
+                },
+                "objetivo": {
+                    "type": "number"
+                },
+                "total": {
+                    "type": "integer"
+                },
+                "vencidas": {
+                    "type": "integer"
                 }
             }
         },

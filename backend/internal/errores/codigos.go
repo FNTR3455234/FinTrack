@@ -31,6 +31,10 @@ const (
 	CodigoTransaccionNoEncontrada = "TRANSACCION_NO_ENCONTRADA"
 	CodigoPresupuestoNoEncontrado = "PRESUPUESTO_NO_ENCONTRADO"
 
+	// Metas de ahorro (fase 9)
+	CodigoMetaNoEncontrada       = "META_NO_ENCONTRADA"
+	CodigoAportacionNoEncontrada = "APORTACION_NO_ENCONTRADA"
+
 	// Reglas de negocio (fases 4 y 5)
 	CodigoCuentaConTransacciones    = "CUENTA_CON_TRANSACCIONES"
 	CodigoCategoriaConTransacciones = "CATEGORIA_CON_TRANSACCIONES"

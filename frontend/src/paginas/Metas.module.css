@@ -1,0 +1,68 @@
+.pila {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: opacity var(--transicion);
+}
+
+.pila[data-cargando] {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.cifras {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 14px;
+}
+
+.interruptor {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.85rem;
+  color: var(--texto-tenue);
+  cursor: pointer;
+}
+
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.fila {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* min-width 0 es lo que permite que la barra se encoja dentro del flex en vez
+   de empujar a las acciones fuera de la tarjeta. */
+.barra {
+  flex: 1;
+  min-width: 0;
+}
+
+.acciones {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 780px) {
+  .fila {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .acciones {
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+}

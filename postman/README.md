@@ -1,7 +1,7 @@
 # Entregable 4 — Pruebas de la API con Postman
 
-Colección completa de la API REST de FinTrack: **41 peticiones** repartidas en 10 carpetas, con
-**105 aserciones** que se ejecutan solas.
+Colección completa de la API REST de FinTrack: **53 peticiones** repartidas en 11 carpetas, con
+**139 aserciones** que se ejecutan solas.
 
 | Archivo | Qué es |
 |---|---|
@@ -69,10 +69,11 @@ Salida real de la última ejecución:
 | **Categorías** | 4 | CRUD y filtro por tipo |
 | **Transacciones** | 6 | CRUD, filtros, búsqueda y paginación |
 | **Presupuestos** | 4 | CRUD y periodo |
-| **Reportes** | 5 | Las dos consultas relacionales, resumen, tendencia y saldos |
+| **Reportes** | 5 | Las consultas relacionales 1 y 2, resumen, tendencia y saldos |
 | **CSV** | 2 | Exportar e importar |
+| **Metas de ahorro** | 11 | Consulta relacional 3, aportaciones y el borrado en cascada |
 | **Errores** | 8 | Los casos que **tienen** que fallar |
-| **Limpieza** | 2 | Borra lo que creó la colección |
+| **Limpieza** | 3 | Borra lo que creó la colección |
 
 ### Se puede correr las veces que haga falta
 

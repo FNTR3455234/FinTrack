@@ -21,6 +21,21 @@ definitions:
       porcentaje_usado:
         type: number
     type: object
+  github_com_FNTR3455234_FinTrack_backend_internal_modelos.Aportacion:
+    properties:
+      creado_en:
+        type: string
+      fecha:
+        type: string
+      id:
+        type: string
+      meta_id:
+        type: string
+      monto:
+        type: number
+      nota:
+        type: string
+    type: object
   github_com_FNTR3455234_FinTrack_backend_internal_modelos.Categoria:
     properties:
       archivada:
@@ -98,6 +113,75 @@ definitions:
       total:
         type: number
     type: object
+  github_com_FNTR3455234_FinTrack_backend_internal_modelos.ListadoMetas:
+    properties:
+      metas:
+        items:
+          $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.ProgresoMeta'
+        type: array
+      resumen:
+        $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.ResumenMetas'
+    type: object
+  github_com_FNTR3455234_FinTrack_backend_internal_modelos.Meta:
+    properties:
+      actualizado_en:
+        type: string
+      archivada:
+        type: boolean
+      color:
+        type: string
+      creado_en:
+        type: string
+      fecha_limite:
+        type: string
+      id:
+        type: string
+      monto_objetivo:
+        type: number
+      nombre:
+        type: string
+      notas:
+        type: string
+    type: object
+  github_com_FNTR3455234_FinTrack_backend_internal_modelos.MetaConAportaciones:
+    properties:
+      ahorrado:
+        description: Lo que suma la agregacion.
+        type: number
+      aportaciones:
+        type: integer
+      archivada:
+        type: boolean
+      color:
+        type: string
+      detalle:
+        items:
+          $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.Aportacion'
+        type: array
+      dias_restantes:
+        type: integer
+      estado:
+        description: Lo que añade el servicio a partir de la fecha de hoy.
+        type: string
+      fecha_limite:
+        type: string
+      meta_id:
+        type: string
+      monto_objetivo:
+        type: number
+      nombre:
+        type: string
+      notas:
+        type: string
+      porcentaje:
+        type: number
+      restante:
+        type: number
+      ritmo_mensual:
+        type: number
+      ultima_fecha:
+        type: string
+    type: object
   github_com_FNTR3455234_FinTrack_backend_internal_modelos.Periodo:
     properties:
       anio:
@@ -116,6 +200,19 @@ definitions:
     required:
     - moneda
     - nombre
+    type: object
+  github_com_FNTR3455234_FinTrack_backend_internal_modelos.PeticionAportacion:
+    properties:
+      fecha:
+        type: string
+      monto:
+        type: number
+      nota:
+        maxLength: 140
+        type: string
+    required:
+    - fecha
+    - monto
     type: object
   github_com_FNTR3455234_FinTrack_backend_internal_modelos.PeticionCategoria:
     properties:
@@ -175,6 +272,29 @@ definitions:
     required:
     - email
     - password
+    type: object
+  github_com_FNTR3455234_FinTrack_backend_internal_modelos.PeticionMeta:
+    properties:
+      archivada:
+        type: boolean
+      color:
+        type: string
+      fecha_limite:
+        type: string
+      monto_objetivo:
+        type: number
+      nombre:
+        maxLength: 80
+        minLength: 1
+        type: string
+      notas:
+        maxLength: 500
+        type: string
+    required:
+    - color
+    - fecha_limite
+    - monto_objetivo
+    - nombre
     type: object
   github_com_FNTR3455234_FinTrack_backend_internal_modelos.PeticionPresupuesto:
     properties:
@@ -266,6 +386,41 @@ definitions:
       monto_limite:
         type: number
     type: object
+  github_com_FNTR3455234_FinTrack_backend_internal_modelos.ProgresoMeta:
+    properties:
+      ahorrado:
+        description: Lo que suma la agregacion.
+        type: number
+      aportaciones:
+        type: integer
+      archivada:
+        type: boolean
+      color:
+        type: string
+      dias_restantes:
+        type: integer
+      estado:
+        description: Lo que añade el servicio a partir de la fecha de hoy.
+        type: string
+      fecha_limite:
+        type: string
+      meta_id:
+        type: string
+      monto_objetivo:
+        type: number
+      nombre:
+        type: string
+      notas:
+        type: string
+      porcentaje:
+        type: number
+      restante:
+        type: number
+      ritmo_mensual:
+        type: number
+      ultima_fecha:
+        type: string
+    type: object
   github_com_FNTR3455234_FinTrack_backend_internal_modelos.PuntoTendencia:
     properties:
       balance:
@@ -321,6 +476,19 @@ definitions:
         $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.ContadorEstados'
       saldo_total:
         type: number
+    type: object
+  github_com_FNTR3455234_FinTrack_backend_internal_modelos.ResumenMetas:
+    properties:
+      ahorrado:
+        type: number
+      cumplidas:
+        type: integer
+      objetivo:
+        type: number
+      total:
+        type: integer
+      vencidas:
+        type: integer
     type: object
   github_com_FNTR3455234_FinTrack_backend_internal_modelos.SaldoCuenta:
     properties:
@@ -1043,6 +1211,275 @@ paths:
       summary: Estado del servicio
       tags:
       - salud
+  /metas:
+    get:
+      description: Cada meta con lo que se lleva ahorrado, lo que falta, el porcentaje,
+        el estado y a que ritmo mensual hay que ahorrar para llegar a tiempo. Cruza
+        metas con aportaciones (consulta relacional 3).
+      parameters:
+      - description: Incluye tambien las archivadas
+        in: query
+        name: incluir_archivadas
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.Sobre'
+            - properties:
+                datos:
+                  $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.ListadoMetas'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+      security:
+      - BearerAuth: []
+      summary: Listar metas de ahorro
+      tags:
+      - metas
+    post:
+      consumes:
+      - application/json
+      description: 'La fecha limite es obligatoria: sin ella no se puede calcular
+        a que ritmo hay que ahorrar.'
+      parameters:
+      - description: Datos de la meta
+        in: body
+        name: cuerpo
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.PeticionMeta'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.Sobre'
+            - properties:
+                datos:
+                  $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.Meta'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+      security:
+      - BearerAuth: []
+      summary: Crear una meta de ahorro
+      tags:
+      - metas
+  /metas/{id}:
+    delete:
+      description: 'Borra tambien sus aportaciones: una aportacion no significa nada
+        sin su meta. A diferencia de cuentas y categorias, aqui no hay 409.'
+      parameters:
+      - description: Identificador de 24 caracteres
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Borrada
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+      security:
+      - BearerAuth: []
+      summary: Borrar una meta
+      tags:
+      - metas
+    get:
+      description: El progreso mas el detalle de cada aportacion, que es lo que explica
+        de donde sale la cifra. Responde 404 si la meta es de otro usuario.
+      parameters:
+      - description: Identificador de 24 caracteres
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.Sobre'
+            - properties:
+                datos:
+                  $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.MetaConAportaciones'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+      security:
+      - BearerAuth: []
+      summary: Obtener una meta con sus aportaciones
+      tags:
+      - metas
+    put:
+      consumes:
+      - application/json
+      description: 'Las aportaciones no se tocan: subir el objetivo no borra lo ya
+        ahorrado, solo cambia el porcentaje.'
+      parameters:
+      - description: Identificador de 24 caracteres
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Datos de la meta
+        in: body
+        name: cuerpo
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.PeticionMeta'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.Sobre'
+            - properties:
+                datos:
+                  $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.Meta'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+      security:
+      - BearerAuth: []
+      summary: Actualizar una meta
+      tags:
+      - metas
+  /metas/{id}/aportaciones:
+    post:
+      consumes:
+      - application/json
+      description: 'Dinero apartado para la meta. NO es una transaccion y no toca
+        el saldo de ninguna cuenta: apartar dinero no es gastarlo. Se permite pasarse
+        del objetivo.'
+      parameters:
+      - description: Identificador de la meta
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Monto, fecha y nota
+        in: body
+        name: cuerpo
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.PeticionAportacion'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.Sobre'
+            - properties:
+                datos:
+                  $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_modelos.Aportacion'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+      security:
+      - BearerAuth: []
+      summary: Registrar una aportacion
+      tags:
+      - metas
+  /metas/{id}/aportaciones/{aportacion}:
+    delete:
+      description: Responde 404 si la aportacion no es de esa meta, aunque exista
+        en otra.
+      parameters:
+      - description: Identificador de la meta
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Identificador de la aportacion
+        in: path
+        name: aportacion
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Borrada
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_FNTR3455234_FinTrack_backend_internal_respuestas.SobreError'
+      security:
+      - BearerAuth: []
+      summary: Borrar una aportacion
+      tags:
+      - metas
   /presupuestos:
     get:
       description: Sin mes ni anio los devuelve todos; con ellos, solo los de ese

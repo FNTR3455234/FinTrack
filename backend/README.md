@@ -167,6 +167,8 @@ texto del mensaje. El catálogo completo está en
 | 🔒 | `/api/v1/categorias`, `/api/v1/categorias/:id` | CRUD de categorías |
 | 🔒 | `/api/v1/transacciones`, `/api/v1/transacciones/:id` | CRUD de transacciones con filtros y paginación |
 | 🔒 | `/api/v1/presupuestos`, `/api/v1/presupuestos/:id` | CRUD de presupuestos mensuales |
+| 🔒 | `/api/v1/metas`, `/api/v1/metas/:id` | CRUD de metas de ahorro con su progreso |
+| 🔒 | `/api/v1/metas/:id/aportaciones` | Registrar y quitar dinero apartado para una meta |
 | 🔒 GET | `/api/v1/reportes/gastos-por-categoria` | **Consulta relacional 1**: en qué se fue el dinero |
 | 🔒 GET | `/api/v1/reportes/estado-presupuestos` | **Consulta relacional 2**: presupuestado contra gastado |
 | 🔒 GET | `/api/v1/reportes/resumen` | Cifras del mes para el tablero |
@@ -469,6 +471,75 @@ la forma de la serie.
 segunda fuente de verdad que se desincroniza en cuanto una transacción se edita o se borra
 ([decisión 020](../docs/decisiones.md)).
 
+## Metas de ahorro
+
+| Método | Ruta | Qué hace |
+|---|---|---|
+| `GET` | `/metas?incluir_archivadas=` | Cada meta con su progreso, más el resumen del conjunto |
+| `POST` | `/metas` | Crear |
+| `GET` | `/metas/{id}` | El progreso **y el detalle de cada aportación** |
+| `PUT` | `/metas/{id}` | Actualizar |
+| `DELETE` | `/metas/{id}` | Borrar la meta **y sus aportaciones** |
+| `POST` | `/metas/{id}/aportaciones` | Apartar dinero para la meta |
+| `DELETE` | `/metas/{id}/aportaciones/{aportacion}` | Quitar una aportación |
+
+```json
+{
+  "nombre": "Fondo de emergencia",
+  "monto_objetivo": 30000,
+  "fecha_limite": "2027-01-28T12:00:00Z",
+  "color": "#0891B2",
+  "notas": "Tres meses de gastos fijos."
+}
+```
+
+### Una aportación no es una transacción
+
+Apartar 3,000 para un viaje **no es gastarlos**: no sale de ninguna cuenta y no cuenta como gasto
+del mes. Si se registrara como transacción, el total de gastos incluiría dinero que solo cambió de
+sitio y tanto `/reportes/resumen` como el semáforo de presupuestos mentirían. Por eso las
+aportaciones viven en su propia colección y el saldo de las cuentas no las ve.
+
+La contrapartida honesta: el progreso de una meta **no está conectado con el saldo real** de
+ninguna cuenta. Es un registro de lo que has ido separando, no un movimiento de dinero. Conectar
+las dos cosas necesitaría un concepto de *traspaso* que el modelo no tiene
+([decisión 037](../docs/decisiones.md)).
+
+### Lo ahorrado no se guarda
+
+Misma regla que el saldo de una cuenta: se calcula sumando las aportaciones, con la
+**consulta relacional 3** (`metas` → `aportaciones`). Editar el objetivo de una meta no toca lo ya
+ahorrado; solo cambia el porcentaje.
+
+### El reparto entre MongoDB y Go
+
+La agregación suma **dinero**; el servicio calcula **calendario**:
+
+| Campo | Lo calcula | Por qué |
+|---|---|---|
+| `ahorrado`, `restante`, `porcentaje`, `aportaciones`, `ultima_fecha` | La agregación | Los datos están en la base; traerlos todos para sumarlos en Go sería peor |
+| `estado`, `dias_restantes`, `ritmo_mensual` | El servicio en Go | Dependen de la fecha de hoy, y así se prueban con un reloj fijo |
+
+`restante` se corta en 0: si juntaste de más, lo que falta es cero, no un número negativo. Que te
+pasaste lo dice el porcentaje, que sí puede superar el 100.
+
+`ritmo_mensual` es lo que convierte una meta en un plan: "faltan 14,500" no dice si es mucho o
+poco, "unos 4,833 al mes" sí. Se reparte en meses de 30 días fijos —una orientación, no una cifra
+contable— y si queda menos de un mes se pide el restante entero: repartirlo entre "medio mes" daría
+un número tranquilizador que no ayuda a nadie.
+
+### Estado
+
+Se mira **primero si ya se juntó el dinero**. Una meta que llegó al objetivo está `cumplida` aunque
+la fecha ya haya pasado: lo contrario sería decirle a alguien que falló cuando en realidad lo
+consiguió.
+
+| Estado | Cuándo |
+|---|---|
+| `cumplida` | `ahorrado >= monto_objetivo` |
+| `vencida` | No llegó y `fecha_limite` ya pasó |
+| `en_curso` | El resto |
+
 ## Exportar e importar CSV
 
 Las dos mitades encajan: **lo que exporta la API se puede volver a importar sin editarlo**.
@@ -535,7 +606,7 @@ Límites: 2 MiB por archivo, 5 000 filas al importar y 10 000 al exportar.
 
 Con la API corriendo: **[http://localhost:8080/swagger](http://localhost:8080/swagger)**.
 
-Son **33 operaciones sobre 20 rutas**, con sus parámetros, sus cuerpos de ejemplo y los códigos de
+Son **40 operaciones sobre 24 rutas**, con sus parámetros, sus cuerpos de ejemplo y los códigos de
 error que puede devolver cada una. El botón **Authorize** acepta el token de acceso y a partir de
 ahí se puede probar cualquier endpoint desde el navegador.
 
@@ -646,10 +717,10 @@ Hay dos clases de prueba:
 
 Las de `internal/rutas` levantan la **API completa contra MongoDB de verdad** —router,
 middlewares, handlers, servicios y repositorios, sin ningún doble— y cubren el CRUD de los cuatro
-recursos, los filtros, la paginación, las cinco agregaciones y la comprobación de que **dos
+recursos, los filtros, la paginación, las seis agregaciones y la comprobación de que **dos
 usuarios nunca ven ni tocan los datos del otro**.
 
-Las dos consultas relacionales se prueban contra un juego de datos chico y conocido, montado por la
+Las tres consultas relacionales se prueban contra un juego de datos chico y conocido, montado por la
 propia prueba, en el que cada cifra que se afirma se puede sumar a mano: los tres estados del
 semáforo, los porcentajes, el mes de al lado que no debe colarse y un presupuesto sin gastos que
 tiene que aparecer en cero.

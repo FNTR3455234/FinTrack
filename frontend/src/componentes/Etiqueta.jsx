@@ -8,6 +8,13 @@ const TEXTO_ESTADO = {
   excedido: 'Excedido',
 }
 
+// Lo mismo para las metas de ahorro.
+const TEXTO_META = {
+  cumplida: 'Cumplida',
+  en_curso: 'En curso',
+  vencida: 'Vencida',
+}
+
 // Etiqueta es la pastilla de color de las tablas.
 //
 // Nunca lleva solo color: el estado tambien va escrito. Un semaforo que solo se
@@ -29,4 +36,9 @@ export function EstadoPresupuesto({ estado }) {
 // TipoMovimiento distingue ingreso de gasto en el listado de transacciones.
 export function TipoMovimiento({ tipo }) {
   return <Etiqueta tono={tipo}>{tipo === 'ingreso' ? 'Ingreso' : 'Gasto'}</Etiqueta>
+}
+
+// EstadoMeta pinta el estado de una meta de ahorro.
+export function EstadoMeta({ estado }) {
+  return <Etiqueta tono={estado}>{TEXTO_META[estado] || estado}</Etiqueta>
 }

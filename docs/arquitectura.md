@@ -143,12 +143,27 @@ existe. Para el intruso, sencillamente no está.
 1. **Al crear una transacción** llegan `cuenta_id` y `categoria_id` en el cuerpo.
    `servicios.validarReferencias` comprueba las dos filtrando por usuario, así que un id ajeno
    "no existe". Lo mismo hace `Presupuestos.validarCategoria`.
-2. **En las agregaciones de reportes** (fase 5), donde el riesgo es peor porque cruzan colecciones:
-   un `$lookup` al que se le olvide el `usuario_id` sumaría dinero ajeno sin que ningún 403 lo
-   delate. Por eso el `$lookup` con `let` + `pipeline` de
-   `reportes_presupuestos.go` compara `$$usr` además de la categoría, aunque el `$match` inicial ya
-   haya filtrado. Hay una prueba de integración con dos usuarios reales que lo comprueba sobre las
-   cinco agregaciones.
+2. **En las agregaciones de reportes** (fases 5 y 9), donde el riesgo es peor porque cruzan
+   colecciones: un `$lookup` al que se le olvide el `usuario_id` sumaría dinero ajeno sin que ningún
+   403 lo delate. Por eso los `$lookup` con `let` + `pipeline` de `reportes_presupuestos.go` y
+   `reportes_metas.go` comparan `$$usr` además de la categoría o la meta, aunque el `$match` inicial
+   ya haya filtrado. Hay pruebas de integración con dos usuarios reales que lo comprueban sobre las
+   seis agregaciones.
+
+### Las tres consultas relacionales
+
+| # | Cruza | Responde | Código |
+|---|---|---|---|
+| 1 | `transacciones` → `categorias` | En qué se fue el dinero del mes | `reportes_gastos.go` |
+| 2 | `presupuestos` → `categorias`, `transacciones` | Lo presupuestado contra lo gastado | `reportes_presupuestos.go` |
+| 3 | `metas` → `aportaciones` | Lo que se quiere juntar contra lo que ya se juntó | `reportes_metas.go` |
+
+Las tres, con su versión de `mongosh` y su resultado real contra la semilla, están en
+[`database/README.md`](../database/README.md#las-tres-consultas-relacionales).
+
+En la 3 el reparto de trabajo es explícito: **la agregación suma dinero y el servicio en Go calcula
+el calendario** (estado, días restantes, ritmo mensual). Lo que depende de la fecha de hoy se saca
+de la base a propósito, para poder probarlo con un reloj fijo ([decisión 040](decisiones.md)).
 
 ## Modelo de datos
 

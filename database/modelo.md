@@ -8,9 +8,12 @@ erDiagram
     usuarios ||--o{ categorias : "define"
     usuarios ||--o{ transacciones : "registra"
     usuarios ||--o{ presupuestos : "fija"
+    usuarios ||--o{ metas : "se propone"
+    usuarios ||--o{ aportaciones : "aparta"
     cuentas ||--o{ transacciones : "origen del movimiento"
     categorias ||--o{ transacciones : "clasifica"
     categorias ||--o{ presupuestos : "se limita en"
+    metas ||--o{ aportaciones : "se junta con"
 
     usuarios {
         ObjectId _id PK
@@ -64,6 +67,29 @@ erDiagram
         int mes "1-12"
         int anio
     }
+
+    metas {
+        ObjectId _id PK
+        ObjectId usuario_id FK
+        string nombre "Fondo de emergencia"
+        double monto_objetivo "cuanto se quiere juntar"
+        date fecha_limite "obligatoria: es la que da el ritmo"
+        string color "hexadecimal"
+        string notas "opcional"
+        bool archivada
+        date creado_en
+        date actualizado_en
+    }
+
+    aportaciones {
+        ObjectId _id PK
+        ObjectId usuario_id FK
+        ObjectId meta_id FK
+        double monto "siempre mayor que 0"
+        date fecha
+        string nota "opcional"
+        date creado_en
+    }
 ```
 
 ## Relaciones
@@ -80,6 +106,8 @@ Todas las relaciones son **uno a muchos** y se modelan por **referencia** (guard
 | cuenta → transacciones | 1:N | Una transacción sale de una sola cuenta |
 | categoría → transacciones | 1:N | Una transacción pertenece a una sola categoría |
 | categoría → presupuestos | 1:N | Una categoría puede tener un presupuesto por cada mes |
+| usuario → metas | 1:N | Objetivos de ahorro, independientes entre sí |
+| meta → aportaciones | 1:N | **Composición**: es la única relación en la que borrar el padre borra los hijos (ver más abajo) |
 
 **Regla transversal:** todos los documentos, salvo `usuarios`, llevan `usuario_id`. Ninguna
 consulta llega a MongoDB sin filtrar por ese campo, y su valor sale siempre del token JWT,
@@ -104,6 +132,22 @@ duplicados de forma natural.
 **El monto siempre es positivo.** Lo que decide si suma o resta es el campo `tipo`. Evita el
 error clásico de tener signos mezclados en la misma colección.
 
+**Lo ahorrado en una meta tampoco se guarda.** Misma regla que el saldo de una cuenta: se calcula
+sumando sus aportaciones.
+
+**Una aportación no es una transacción, y por eso está en otra colección.** Apartar 3,000 para un
+viaje no es gastarlos: no sale de ninguna cuenta y no debe contar como gasto del mes. Si se
+guardaran juntas, el total de gastos incluiría dinero que solo cambió de sitio, y tanto el resumen
+como el semáforo de presupuestos mentirían.
+
+**`meta → aportaciones` es la única relación con borrado en cascada.** Una transacción existe por
+sí misma y solo se apoya en su categoría, así que borrar la categoría la dejaría huérfana: por eso
+ahí la API responde `409` y obliga a archivar. Una aportación, en cambio, no significa nada sin su
+meta —"3,000 el 15 de marzo" no es un dato suelto—, así que al borrar la meta se van con ella.
+Como MongoDB está en modo standalone y no hay transacciones de varios documentos, **se borran
+primero las aportaciones y después la meta**: si el segundo paso falla queda una meta sin
+aportaciones (visible y se puede volver a borrar), y no aportaciones huérfanas que ya nadie ve.
+
 ## Índices
 
 | Colección | Índice | Único | Para qué |
@@ -114,6 +158,8 @@ error clásico de tener signos mezclados en la misma colección.
 | transacciones | `usuario_id, fecha` (desc) | No | Listado principal: filtra por dueño y ordena por fecha con el mismo índice |
 | transacciones | `usuario_id, categoria_id` | No | Consulta de gastos por categoría y el `$lookup` de presupuestos |
 | presupuestos | `usuario_id, categoria_id, mes, anio` | Sí | Impide dos presupuestos para la misma categoría y periodo |
+| metas | `usuario_id, fecha_limite` | No | Listado de metas del usuario, ya ordenado por lo que vence antes |
+| aportaciones | `usuario_id, meta_id` | No | El `$lookup` que junta cada meta con sus aportaciones |
 
 Se crean en `01_crear_colecciones.js` y también de forma programática al arrancar el servidor
 (fase 2), en los dos casos de manera idempotente.

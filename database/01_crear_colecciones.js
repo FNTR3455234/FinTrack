@@ -129,6 +129,56 @@ definirColeccion("presupuestos", {
   },
 });
 
+// --- metas ------------------------------------------------------------------
+// Objetivo de ahorro: cuanto se quiere juntar y para cuando.
+//
+// No se guarda cuanto se lleva ahorrado: se calcula sumando las aportaciones,
+// igual que el saldo de una cuenta se calcula sumando sus transacciones. Una
+// sola fuente de verdad (ver docs/decisiones.md, decision 020).
+definirColeccion("metas", {
+  bsonType: "object",
+  required: ["usuario_id", "nombre", "monto_objetivo", "fecha_limite", "color", "archivada", "creado_en"],
+  additionalProperties: false,
+  properties: {
+    _id: { bsonType: "objectId" },
+    usuario_id: { bsonType: "objectId" },
+    nombre: { bsonType: "string", minLength: 1, maxLength: 80 },
+    monto_objetivo: { bsonType: "double", exclusiveMinimum: true, minimum: 0 },
+    // Una meta sin fecha es un deseo, no un plan: sin ella no se puede decir a
+    // que ritmo hay que ahorrar. Por eso es obligatoria.
+    fecha_limite: { bsonType: "date" },
+    color: { bsonType: "string", pattern: "^#[0-9A-Fa-f]{6}$" },
+    notas: { bsonType: ["string", "null"], maxLength: 500 },
+    archivada: { bsonType: "bool" },
+    creado_en: { bsonType: "date" },
+    actualizado_en: { bsonType: "date" },
+  },
+});
+
+// --- aportaciones -----------------------------------------------------------
+// Dinero que el usuario aparta para una meta.
+//
+// NO es una transaccion y no toca el saldo de ninguna cuenta: apartar dinero
+// para un viaje no es gastarlo. Si se registrara como gasto, el total de gastos
+// del mes incluiria dinero que solo se movio de sitio y los reportes mentirian.
+//
+// Una aportacion no significa nada sin su meta, asi que al borrar la meta se
+// borran tambien sus aportaciones (composicion, no asociacion).
+definirColeccion("aportaciones", {
+  bsonType: "object",
+  required: ["usuario_id", "meta_id", "monto", "fecha", "creado_en"],
+  additionalProperties: false,
+  properties: {
+    _id: { bsonType: "objectId" },
+    usuario_id: { bsonType: "objectId" },
+    meta_id: { bsonType: "objectId" },
+    monto: { bsonType: "double", exclusiveMinimum: true, minimum: 0 },
+    fecha: { bsonType: "date" },
+    nota: { bsonType: ["string", "null"], maxLength: 140 },
+    creado_en: { bsonType: "date" },
+  },
+});
+
 print("Creando indices...");
 
 // Un email no se puede repetir: es la credencial de acceso.
@@ -150,5 +200,13 @@ bd.presupuestos.createIndex(
   { usuario_id: 1, categoria_id: 1, mes: 1, anio: 1 },
   { unique: true, name: "idx_presupuestos_unico_periodo" }
 );
+
+// Las metas se listan siempre del usuario y ordenadas por fecha limite: lo que
+// vence antes es lo que hay que mirar primero.
+bd.metas.createIndex({ usuario_id: 1, fecha_limite: 1 }, { name: "idx_metas_usuario_fecha" });
+
+// Lo usa el $lookup de la agregacion de progreso, que junta cada meta con sus
+// aportaciones. Sin el, cruzar N metas recorreria la coleccion N veces.
+bd.aportaciones.createIndex({ usuario_id: 1, meta_id: 1 }, { name: "idx_aportaciones_usuario_meta" });
 
 print("Listo. Colecciones e indices de FinTrack en su lugar.");

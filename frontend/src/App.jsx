@@ -7,6 +7,7 @@ import { useAuth } from './contexto/AuthContexto.jsx'
 import Categorias from './paginas/Categorias.jsx'
 import Cuentas from './paginas/Cuentas.jsx'
 import Login from './paginas/Login.jsx'
+import Metas from './paginas/Metas.jsx'
 import NoEncontrada from './paginas/NoEncontrada.jsx'
 import Perfil from './paginas/Perfil.jsx'
 import Presupuestos from './paginas/Presupuestos.jsx'
@@ -47,6 +48,7 @@ export default function App() {
           <Route path="/cuentas" element={<Cuentas />} />
           <Route path="/categorias" element={<Categorias />} />
           <Route path="/presupuestos" element={<Presupuestos />} />
+          <Route path="/metas" element={<Metas />} />
           <Route path="/reportes" element={<Reportes />} />
           <Route path="/perfil" element={<Perfil />} />
         </Route>

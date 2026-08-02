@@ -63,6 +63,26 @@
   background: var(--peligro);
 }
 
+/*
+  Estados de una meta de ahorro. Comparten hoja con los del presupuesto porque
+  lo que se comparte de verdad es la apariencia de la barra, no su significado.
+
+  Los colores estan al reves a proposito, y no es un descuido: en un presupuesto
+  llenar la barra es malo (te estas pasando del limite) y en una meta es bueno
+  (ya juntaste el dinero). El mismo verde significa "vas bien" en los dos casos.
+*/
+.relleno[data-estado='cumplida'] {
+  background: var(--acento);
+}
+
+.relleno[data-estado='en_curso'] {
+  background: var(--info);
+}
+
+.relleno[data-estado='vencida'] {
+  background: var(--peligro);
+}
+
 .pie {
   display: flex;
   justify-content: space-between;

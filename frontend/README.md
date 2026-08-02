@@ -13,7 +13,7 @@ npm run dev            # http://localhost:5173
 
 Necesita la API corriendo en el 8080 (`make dev` desde la raíz) y la semilla cargada
 (`make seed`). Entra con **`demo@fintrack.mx` / `Demo1234!`**: son 6 meses de historia,
-3 cuentas, 10 categorías, 120 movimientos y 6 presupuestos.
+3 cuentas, 10 categorías, 120 movimientos, 6 presupuestos y 3 metas de ahorro.
 
 | Comando | Qué hace |
 |---|---|
@@ -50,7 +50,8 @@ está en la [decisión 034](../docs/decisiones.md).
 | `/` | Tablero: 4 cifras del mes, pastel de gastos, barras de 6 meses y las barras de presupuesto |
 | `/transacciones` | Listado filtrable y paginado, alta y edición, exportar e importar CSV |
 | `/presupuestos` | Límites del mes con su semáforo |
-| `/reportes` | Las dos consultas relacionales, tendencia y saldo de cada cuenta |
+| `/metas` | Metas de ahorro con su progreso, su estado y el ritmo mensual necesario |
+| `/reportes` | Las consultas relacionales 1 y 2, tendencia y saldo de cada cuenta |
 | `/cuentas`, `/categorias` | Catálogos |
 | `/perfil` | Nombre, moneda y tema |
 
@@ -179,5 +180,7 @@ Tomadas del stack en contenedores (`make arriba`) con los datos de ejemplo.
 | **Tablero**, tema claro | El mismo, tema oscuro |
 | ![Movimientos](capturas/03-movimientos.png) | ![Presupuestos](capturas/04-presupuestos.png) |
 | **Movimientos** con filtros y paginación | **Presupuestos** con el semáforo del mes |
-| ![Reportes](capturas/05-reportes.png) | ![Entrada](capturas/06-login.png) |
-| **Reportes**: las dos consultas relacionales | **Entrada** |
+| ![Reportes](capturas/05-reportes.png) | ![Metas de ahorro](capturas/07-metas.png) |
+| **Reportes**: las consultas relacionales | **Metas de ahorro** con sus tres estados |
+| ![Entrada](capturas/06-login.png) | |
+| **Entrada** | |

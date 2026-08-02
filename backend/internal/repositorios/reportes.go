@@ -2,9 +2,10 @@
 // aqui no se leen documentos sueltos: se ejecutan agregaciones que cruzan
 // colecciones y devuelven filas calculadas.
 //
-// Las dos consultas relacionales de la entrega estan en reportes_gastos.go y en
-// reportes_presupuestos.go, cada una con su objetivo documentado. Las mismas
-// consultas, en su version de mongosh, estan en database/README.md.
+// Las tres consultas relacionales de la entrega estan en reportes_gastos.go,
+// reportes_presupuestos.go y reportes_metas.go, cada una con su objetivo
+// documentado. Las mismas consultas, en su version de mongosh, estan en
+// database/README.md.
 package repositorios
 
 import (
@@ -16,12 +17,13 @@ import (
 	"github.com/FNTR3455234/FinTrack/backend/internal/modelos"
 )
 
-// Reportes ejecuta las agregaciones. Guarda las tres colecciones que cruza
-// porque cada agregacion arranca en una distinta.
+// Reportes ejecuta las agregaciones. Guarda las colecciones que cruza porque
+// cada agregacion arranca en una distinta.
 type Reportes struct {
 	transacciones *mongo.Collection
 	presupuestos  *mongo.Collection
 	cuentas       *mongo.Collection
+	metas         *mongo.Collection
 }
 
 // NuevoReportes construye el repositorio sobre la base indicada.
@@ -30,6 +32,7 @@ func NuevoReportes(bd *mongo.Database) *Reportes {
 		transacciones: bd.Collection("transacciones"),
 		presupuestos:  bd.Collection("presupuestos"),
 		cuentas:       bd.Collection("cuentas"),
+		metas:         bd.Collection("metas"),
 	}
 }
 

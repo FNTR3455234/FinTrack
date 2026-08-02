@@ -580,6 +580,99 @@ justificarlas después. Formato por entrada: **decisión, contexto, alternativas
 
 ---
 
+## 037 — Una aportación a una meta no es una transacción
+
+**Fecha:** 2026-08-02 · **Fase:** 9
+
+- **Contexto:** las metas de ahorro necesitan registrar el dinero que se va apartando. La pregunta
+  era si eso debía ser una transacción más.
+- **Alternativas:**
+  1. **Una transacción con `meta_id`.** Un solo libro de cuentas y los saldos siempre cuadran.
+  2. **La meta apunta a una cuenta de ahorro** y el progreso es el saldo de esa cuenta. Cero
+     duplicación.
+  3. **Colección `aportaciones` aparte**, sin efecto sobre las cuentas.
+- **Decisión:** la 3.
+- **Por qué:** apartar 3,000 para un viaje **no es gastarlos**. Con la opción 1 habría que
+  registrarlo como gasto de la cuenta de origen, y entonces el total de gastos del mes incluiría
+  dinero que solo cambió de sitio: `/reportes/resumen` y el semáforo de presupuestos mentirían.
+  Lo correcto sería un *traspaso* entre cuentas, pero el modelo no lo tiene y añadirlo obligaría a
+  que una transacción tuviera dos cuentas, a excluir los traspasos de las agregaciones y a
+  cambiar el formato del CSV.
+  La opción 2 es elegante pero impide dos metas sobre la misma cuenta y no sabe distinguir el
+  dinero que ya estaba del que se apartó a propósito.
+- **Lo que se pierde, y queda dicho en la interfaz:** el progreso de una meta **no está conectado
+  con el saldo real** de ninguna cuenta. Es un registro de lo que has ido separando. El aviso está
+  en el propio panel de aportaciones, no escondido en un README.
+
+---
+
+## 038 — La fecha límite de una meta es obligatoria
+
+**Fecha:** 2026-08-02 · **Fase:** 9
+
+- **Contexto:** la mayoría de las apps dejan crear metas sin fecha.
+- **Decisión:** `fecha_limite` es obligatoria, tanto en el `$jsonSchema` como en el binding.
+- **Por qué:** es lo que permite responder la única pregunta que hace útil a una meta: *¿a qué
+  ritmo tengo que ahorrar?* Sin fecha, `ritmo_mensual` no existe y lo que queda es una lista de
+  deseos con una barra de progreso. Hacerla opcional es un cambio pequeño (puntero + `omitempty`)
+  si algún día se decide lo contrario.
+
+---
+
+## 039 — Borrar una meta se lleva sus aportaciones, y en ese orden
+
+**Fecha:** 2026-08-02 · **Fase:** 9
+
+- **Contexto:** cuentas y categorías con movimientos responden `409` y obligan a archivar
+  ([decisión 021](#021--una-categoría-con-presupuestos-tampoco-se-puede-borrar)). ¿Debía pasar lo
+  mismo con las metas?
+- **Decisión:** no. Borrar una meta borra sus aportaciones, sin `409`. Y **primero las
+  aportaciones, después la meta**.
+- **Por qué la cascada:** es una relación distinta. Una transacción existe por sí misma y solo se
+  apoya en su categoría, así que borrar la categoría la dejaría huérfana. Una aportación no
+  significa nada sin su meta: "3,000 el 15 de marzo" no es un dato suelto. Es composición, no
+  asociación.
+- **Por qué ese orden:** MongoDB está en standalone y no hay transacciones de varios documentos
+  ([decisión 003](#003--mongodb-en-standalone-sin-replica-set)). Si falla el segundo paso, con este
+  orden queda una meta sin aportaciones —se ve y se puede volver a borrar—; con el orden contrario
+  quedarían aportaciones huérfanas que ya nadie ve ni puede limpiar.
+
+---
+
+## 040 — El dinero lo suma MongoDB; el calendario lo calcula Go
+
+**Fecha:** 2026-08-02 · **Fase:** 9
+
+- **Contexto:** el progreso de una meta necesita sumar aportaciones y además decir cuántos días
+  quedan, en qué estado está y a qué ritmo hay que ahorrar. Todo eso se podía hacer en la
+  agregación, con `$$NOW`.
+- **Decisión:** la agregación devuelve `ahorrado`, `restante`, `porcentaje`, el número de
+  aportaciones y la fecha de la última. `estado`, `dias_restantes` y `ritmo_mensual` los añade el
+  servicio en Go, con un reloj inyectable.
+- **Por qué:** el dinero está en la base y sumarlo allí evita traerse todas las aportaciones. El
+  calendario depende de un instante que en las pruebas conviene poder elegir: con `$$NOW`, una
+  prueba que afirme "faltan 90 días" deja de ser cierta mañana. Con el reloj inyectado, las cifras
+  de la agregación son estables y las del calendario también.
+- **Efecto secundario útil:** la tabla de resultados de `database/README.md` se puede escribir con
+  porcentajes exactos, porque no dependen de cuándo se ejecute.
+
+---
+
+## 041 — La cobertura delató un método que no usaba nadie
+
+**Fecha:** 2026-08-02 · **Fase:** 9
+
+- **Contexto:** al revisar la cobertura de la fase, `repositorios.Metas.Listar` aparecía al 0 %.
+- **Hallazgo:** no era una prueba que faltara. El listado de metas **no sale de esa colección**:
+  sale de la agregación `ProgresoMetas`, que además trae lo ahorrado. El `Listar` estaba escrito
+  por inercia, copiando el patrón de los otros repositorios, y no lo llamaba nadie.
+- **Decisión:** borrarlo, y dejar un comentario en su lugar explicando por qué no está.
+- **Por qué queda anotado:** un `Listar` que devuelve metas sin progreso no le sirve a nadie, y
+  tener los dos invita a llamar al equivocado. Y como ejemplo de para qué sirve mirar la cobertura
+  además del porcentaje total: un 0 % no siempre significa "falta una prueba".
+
+---
+
 ## Pendientes anotados (se resuelven en su fase)
 
 - **Fase 3 — Refresh token sin estado:** el refresh token no se guarda en la base, así que se puede

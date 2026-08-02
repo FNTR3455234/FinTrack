@@ -94,6 +94,8 @@ Un usuario demo con **6 meses de historia** (febrero–julio de 2026), 20 movimi
 | Categorías | 10 | 2 de ingreso (Nómina, Freelance) y 8 de gasto |
 | Transacciones | 120 | 20 por mes × 6 meses, montos en pesos mexicanos |
 | Presupuestos | 6 | Del mes de julio de 2026 |
+| Metas de ahorro | 3 | Una cumplida, una en curso y una vencida |
+| Aportaciones | 9 | Repartidas entre las tres metas |
 
 Resumen mensual que produce la semilla:
 
@@ -112,22 +114,25 @@ una lista fija. Así la semilla es reproducible y las pruebas automáticas puede
 exactos.
 
 Los presupuestos de julio están elegidos a propósito para que el reporte muestre los **tres
-estados** posibles: uno excedido, dos en alerta y tres en orden.
+estados** posibles: uno excedido, dos en alerta y tres en orden. Las metas siguen la misma idea:
+una ya cumplida (se juntó de más), una en curso y una que venció sin completarse.
 
 > **Para re-anclar las fechas:** cambia `ANIO_FINAL` y `MES_FINAL` al principio de
 > `02_insertar_datos.js` y vuelve a correr `make seed`. Los 6 meses se recalculan solos.
 
-## Las dos consultas relacionales
+## Las tres consultas relacionales
 
-Las dos usan `$lookup` para cruzar colecciones. Aquí están en su versión de `mongosh`, para poder
+Las tres usan `$lookup` para cruzar colecciones. Aquí están en su versión de `mongosh`, para poder
 probarlas directamente contra la semilla.
 
-El backend las ejecuta tal cual en `GET /api/v1/reportes/gastos-por-categoria?mes=7&anio=2026` y
-`GET /api/v1/reportes/estado-presupuestos?mes=7&anio=2026`; el código Go está en
-[`backend/internal/repositorios/reportes_gastos.go`](../backend/internal/repositorios/reportes_gastos.go)
-y [`reportes_presupuestos.go`](../backend/internal/repositorios/reportes_presupuestos.go), con las
-mismas etapas y los mismos comentarios. **Las tablas de resultados de abajo son las que devuelve la
-API**, comprobadas contra esta misma semilla.
+El backend las ejecuta tal cual en `GET /api/v1/reportes/gastos-por-categoria?mes=7&anio=2026`,
+`GET /api/v1/reportes/estado-presupuestos?mes=7&anio=2026` y `GET /api/v1/metas`; el código Go
+está en
+[`backend/internal/repositorios/reportes_gastos.go`](../backend/internal/repositorios/reportes_gastos.go),
+[`reportes_presupuestos.go`](../backend/internal/repositorios/reportes_presupuestos.go) y
+[`reportes_metas.go`](../backend/internal/repositorios/reportes_metas.go), con las mismas etapas y
+los mismos comentarios. **Las tablas de resultados de abajo son las que devuelve la API**,
+comprobadas contra esta misma semilla.
 
 ### 1. Gastos por categoría
 
@@ -260,6 +265,79 @@ Resultado real contra la semilla (julio de 2026):
 | Entretenimiento | 1,000.00 | 776.00 | 224.00 | 77.60 % | 🟢 ok |
 | Transporte | 1,200.00 | 816.20 | 383.80 | 68.02 % | 🟢 ok |
 | Salud | 1,500.00 | 901.00 | 599.00 | 60.07 % | 🟢 ok |
+
+### 3. Progreso de las metas de ahorro
+
+**Objetivo:** decir de cada meta cuánto se lleva juntado, cuánto falta y qué porcentaje del
+objetivo representa. Es la contraparte de la consulta 2: aquélla compara lo presupuestado con lo
+gastado, ésta compara lo que se quiere juntar con lo que ya se juntó.
+
+**Cruza:** `metas` → `aportaciones`.
+
+```js
+db.metas.aggregate([
+  // 1. Las metas de ESTE usuario.
+  { $match: { usuario_id: ObjectId("650000000000000000000001"), archivada: false } },
+
+  // 2. Sus aportaciones, ya sumadas.
+  //
+  //    Con let + pipeline y no con el $lookup simple: asi el $group ocurre DENTRO
+  //    de la consulta relacionada y vuelve UNA fila por meta, en vez del arreglo
+  //    completo de sus aportaciones.
+  //
+  //    El $eq de usuario_id no sobra aunque el $match ya haya filtrado las metas:
+  //    sin el, el $lookup sumaria las aportaciones de cualquiera que apuntara a
+  //    ese meta_id.
+  { $lookup: {
+      from: "aportaciones",
+      let: { meta: "$_id", usr: "$usuario_id" },
+      pipeline: [
+        { $match: { $expr: { $and: [
+            { $eq: ["$usuario_id", "$$usr"] },
+            { $eq: ["$meta_id", "$$meta"] },
+        ] } } },
+        { $group: { _id: null,
+                    ahorrado: { $sum: "$monto" },
+                    cantidad: { $sum: 1 },
+                    ultimaFecha: { $max: "$fecha" } } },
+      ],
+      as: "resumen",
+  } },
+
+  // 3. Una meta sin aportaciones deja el arreglo vacio: $ifNull la deja en 0 para
+  //    que aparezca igual, con su barra a cero. La fecha se queda en null: "nunca"
+  //    no es una fecha y no hay que inventarsela.
+  { $addFields: {
+      ahorrado: { $round: [{ $ifNull: [{ $first: "$resumen.ahorrado" }, 0] }, 2] },
+      aportaciones: { $ifNull: [{ $first: "$resumen.cantidad" }, 0] },
+      ultima_fecha: { $first: "$resumen.ultimaFecha" },
+  } },
+
+  // 4. restante se corta en 0: si se junto de mas, lo que falta es cero, no un
+  //    negativo. Que se paso lo dice el porcentaje, que si puede superar el 100.
+  { $addFields: {
+      restante: { $round: [{ $max: [0, { $subtract: ["$monto_objetivo", "$ahorrado"] }] }, 2] },
+      porcentaje: { $round: [{ $multiply: [{ $divide: ["$ahorrado", "$monto_objetivo"] }, 100] }, 2] },
+  } },
+
+  { $project: { _id: 0, meta_id: "$_id", nombre: 1, monto_objetivo: 1, fecha_limite: 1,
+                ahorrado: 1, restante: 1, porcentaje: 1, aportaciones: 1, ultima_fecha: 1 } },
+  { $sort: { fecha_limite: 1 } },
+]);
+```
+
+Resultado real contra la semilla:
+
+| Meta | Objetivo | Ahorrado | Restante | % | Aportaciones | Estado |
+|---|---|---|---|---|---|---|
+| Viaje de fin de año | 25,000.00 | 9,000.00 | 16,000.00 | 36.00 % | 2 | 🔴 vencida |
+| Laptop nueva | 22,000.00 | 22,500.00 | 0.00 | 102.27 % | 3 | 🟢 cumplida |
+| Fondo de emergencia | 30,000.00 | 18,500.00 | 11,500.00 | 61.67 % | 4 | 🔵 en curso |
+
+> La columna **Estado** no sale de la agregación. La consulta suma dinero; el estado, los días
+> restantes y el ritmo mensual dependen de la fecha de hoy y los calcula el servicio en Go
+> ([`metas_ritmo.go`](../backend/internal/servicios/metas_ritmo.go)), donde se pueden probar con un
+> reloj fijo. Por eso los porcentajes de esta tabla son estables y los días no.
 
 ## Respaldo y restauración
 

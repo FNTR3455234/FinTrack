@@ -1550,6 +1550,507 @@
       ]
     },
     {
+      "name": "Metas de ahorro",
+      "description": "Consulta relacional 3: metas cruzadas con aportaciones. Una aportacion no es una transaccion y no toca el saldo de ninguna cuenta.",
+      "item": [
+        {
+          "name": "Crear una meta",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/metas",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "metas"
+              ]
+            },
+            "description": "La fecha limite es obligatoria: es lo que permite calcular el ritmo mensual.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Meta de prueba\",\n  \"monto_objetivo\": 10000,\n  \"fecha_limite\": \"2026-12-31T12:00:00Z\",\n  \"color\": \"#0891B2\",\n  \"notas\": \"Creada por la coleccion\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test(\"el dia se guarda anclado a las 12:00 UTC\", function () {",
+                  "    pm.expect(pm.response.json().datos.fecha_limite).to.eql(\"2026-12-31T12:00:00Z\");",
+                  "});",
+                  "pm.collectionVariables.set(\"meta_id\", pm.response.json().datos.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Aportar a la meta",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/metas/{{meta_id}}/aportaciones",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "metas",
+                "{{meta_id}}",
+                "aportaciones"
+              ]
+            },
+            "description": "Dinero apartado para la meta. La meta llega en la ruta, no en el cuerpo.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monto\": 2500,\n  \"fecha\": \"2026-08-01T12:00:00Z\",\n  \"nota\": \"Primera aportacion\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test(\"queda colgada de la meta de la ruta\", function () {",
+                  "    pm.expect(pm.response.json().datos.meta_id).to.eql(pm.collectionVariables.get(\"meta_id\"));",
+                  "});",
+                  "pm.collectionVariables.set(\"aportacion_id\", pm.response.json().datos.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Segunda aportacion",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/metas/{{meta_id}}/aportaciones",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "metas",
+                "{{meta_id}}",
+                "aportaciones"
+              ]
+            },
+            "description": "Una segunda aportacion, para comprobar que el progreso suma.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monto\": 3500,\n  \"fecha\": \"2026-08-02T12:00:00Z\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar metas con su progreso",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/metas",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "metas"
+              ]
+            },
+            "description": "Consulta relacional 3. Devuelve cada meta con lo ahorrado, lo que falta, el porcentaje, el estado y el ritmo mensual necesario, mas el resumen del conjunto."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const datos = pm.response.json().datos;",
+                  "const mia = datos.metas.find(m => m.meta_id === pm.collectionVariables.get(\"meta_id\"));",
+                  "pm.test(\"suma las dos aportaciones\", function () {",
+                  "    pm.expect(mia.ahorrado).to.eql(6000);",
+                  "    pm.expect(mia.aportaciones).to.eql(2);",
+                  "});",
+                  "pm.test(\"calcula lo que falta y el porcentaje\", function () {",
+                  "    pm.expect(mia.restante).to.eql(4000);",
+                  "    pm.expect(mia.porcentaje).to.eql(60);",
+                  "});",
+                  "pm.test(\"trae estado y ritmo mensual\", function () {",
+                  "    pm.expect(mia.estado).to.be.oneOf([\"en_curso\", \"vencida\", \"cumplida\"]);",
+                  "    pm.expect(mia).to.have.property(\"ritmo_mensual\");",
+                  "});",
+                  "pm.test(\"el resumen acompaña al listado\", function () {",
+                  "    pm.expect(datos.resumen).to.have.property(\"total\");",
+                  "    pm.expect(datos.resumen.total).to.be.above(0);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalle de una meta",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/metas/{{meta_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "metas",
+                "{{meta_id}}"
+              ]
+            },
+            "description": "El progreso mas el detalle de cada aportacion, que es lo que explica el total."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "const datos = pm.response.json().datos;",
+                  "pm.test(\"trae las dos aportaciones, de la mas reciente a la mas vieja\", function () {",
+                  "    pm.expect(datos.detalle).to.have.lengthOf(2);",
+                  "    pm.expect(datos.detalle[0].monto).to.eql(3500);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Subir el objetivo no borra lo ahorrado",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/metas/{{meta_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "metas",
+                "{{meta_id}}"
+              ]
+            },
+            "description": "Editar la meta deja las aportaciones donde estaban: solo cambia el porcentaje.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Meta de prueba\",\n  \"monto_objetivo\": 20000,\n  \"fecha_limite\": \"2026-12-31T12:00:00Z\",\n  \"color\": \"#7C3AED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"el objetivo es el nuevo\", function () {",
+                  "    pm.expect(pm.response.json().datos.monto_objetivo).to.eql(20000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "El progreso se recalcula solo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/metas/{{meta_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "metas",
+                "{{meta_id}}"
+              ]
+            },
+            "description": "Lo ahorrado no cambia; el porcentaje si, porque el objetivo es otro."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const datos = pm.response.json().datos;",
+                  "pm.test(\"sigue habiendo 6000 ahorrados\", function () {",
+                  "    pm.expect(datos.ahorrado).to.eql(6000);",
+                  "});",
+                  "pm.test(\"pero ahora son el 30 por ciento\", function () {",
+                  "    pm.expect(datos.porcentaje).to.eql(30);",
+                  "    pm.expect(datos.restante).to.eql(14000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Quitar una aportacion",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/metas/{{meta_id}}/aportaciones/{{aportacion_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "metas",
+                "{{meta_id}}",
+                "aportaciones",
+                "{{aportacion_id}}"
+              ]
+            },
+            "description": "Al quitarla, el progreso baja."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 204\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "El progreso bajo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/metas/{{meta_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "metas",
+                "{{meta_id}}"
+              ]
+            },
+            "description": "Quedan 3500 de los 6000: la aportacion de 2500 se fue."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"quedan 3500\", function () {",
+                  "    pm.expect(pm.response.json().datos.ahorrado).to.eql(3500);",
+                  "    pm.expect(pm.response.json().datos.detalle).to.have.lengthOf(1);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "No se aporta a una meta que no existe",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/metas/650000000000000000000999/aportaciones",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "metas",
+                "650000000000000000000999",
+                "aportaciones"
+              ]
+            },
+            "description": "Sin esta comprobacion quedarian aportaciones colgando de una meta inventada.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monto\": 100,\n  \"fecha\": \"2026-08-02T12:00:00Z\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "pm.test(\"con el codigo META_NO_ENCONTRADA\", function () {",
+                  "    pm.expect(pm.response.json().error.codigo).to.eql(\"META_NO_ENCONTRADA\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Las metas archivadas no salen por defecto",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/metas?incluir_archivadas=true",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "metas"
+              ],
+              "query": [
+                {
+                  "key": "incluir_archivadas",
+                  "value": "true"
+                }
+              ]
+            },
+            "description": "Una meta archivada es una que ya no se persigue; con incluir_archivadas=true si sale."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "Errores",
       "description": "Los casos que tienen que fallar. Sirven para comprobar el formato uniforme de error y el aislamiento entre usuarios.",
       "item": [
@@ -1939,6 +2440,40 @@
               ]
             },
             "description": "Ya no tiene movimientos: se puede borrar."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"responde 204\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Borrar la meta de prueba",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/metas/{{meta_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "metas",
+                "{{meta_id}}"
+              ]
+            },
+            "description": "Se lleva tambien sus aportaciones: una aportacion no significa nada sin su meta."
           },
           "response": [],
           "event": [

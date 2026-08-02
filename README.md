@@ -3,7 +3,7 @@
 Aplicación web de finanzas personales y presupuestos: registra tus ingresos y gastos, organízalos
 por cuentas y categorías, ponles un límite mensual y mira a dónde se te va el dinero.
 
-> **Estado:** en desarrollo. Fases 0 a 8 de 10 completadas — ver la [tabla de avance](#avance-por-fases).
+> **Estado:** en desarrollo. Fases 0 a 9 de 10 completadas — ver la [tabla de avance](#avance-por-fases).
 
 ## Stack
 
@@ -32,7 +32,7 @@ servicios en orden. Cuando termina, **<http://localhost:8080>**.
 La primera vez MongoDB crea el esquema y carga los datos de ejemplo por su cuenta. Entra con:
 
 > **`demo@fintrack.mx`** / **`Demo1234!`** — 6 meses de historia: 3 cuentas, 10 categorías,
-> 120 transacciones y 6 presupuestos.
+> 120 transacciones, 6 presupuestos y 3 metas de ahorro.
 
 | | |
 |---|---|
@@ -124,7 +124,8 @@ autenticación y por qué cada stack de Compose tiene su propio nombre de proyec
 | Tablero | Cifras del mes, reparto de gastos, seis meses de historia y las barras de presupuesto |
 | Movimientos | Listado filtrable y paginado, alta y edición, exportar e importar CSV |
 | Presupuestos | Límites del mes con su semáforo (en orden / cerca del límite / excedido) |
-| Reportes | Las dos consultas relacionales, la tendencia y el saldo de cada cuenta |
+| Metas de ahorro | Cuánto llevas juntado, en qué estado va cada meta y a qué ritmo tendrías que ahorrar |
+| Reportes | Las consultas relacionales, la tendencia y el saldo de cada cuenta |
 | Cuentas y Categorías | Los catálogos, con archivado en lugar de borrado cuando hay movimientos |
 
 Más capturas, incluido el tema oscuro, en [`frontend/README.md`](frontend/README.md#capturas).
@@ -132,7 +133,7 @@ Más capturas, incluido el tema oscuro, en [`frontend/README.md`](frontend/READM
 ## Documentación de la API
 
 Con el stack levantado, la referencia interactiva está en **<http://localhost:8080/swagger>**:
-33 operaciones con sus parámetros, sus cuerpos de ejemplo y sus códigos de error. El botón
+40 operaciones con sus parámetros, sus cuerpos de ejemplo y sus códigos de error. El botón
 *Authorize* acepta el token y deja probar cualquier endpoint desde el navegador.
 
 ## Integración continua
@@ -177,7 +178,7 @@ pull request:
 | 6 | Exportar/importar CSV, Swagger, colección de Postman | ✅ |
 | 7 | Frontend completo: React + Vite, tema claro/oscuro, gráficas y CSV | ✅ |
 | 8 | Imágenes multi-etapa, Compose completo, nginx, CI y arquitectura | ✅ |
-| 9 | Metas de ahorro | ⏳ |
+| 9 | Metas de ahorro: tercera consulta relacional, ritmo de ahorro y pantalla | ✅ |
 | 10 | Accesibilidad, rendimiento, seguridad y guía de despliegue | ⏳ |
 
 ## Licencia

@@ -12,6 +12,7 @@ const SECCIONES = [
   { a: '/', texto: 'Tablero', icono: '◧' },
   { a: '/transacciones', texto: 'Movimientos', icono: '⇅' },
   { a: '/presupuestos', texto: 'Presupuestos', icono: '◎' },
+  { a: '/metas', texto: 'Metas', icono: '★' },
   { a: '/reportes', texto: 'Reportes', icono: '◔' },
   { a: '/cuentas', texto: 'Cuentas', icono: '▤' },
   { a: '/categorias', texto: 'Categorias', icono: '◈' },

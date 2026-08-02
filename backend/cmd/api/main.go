@@ -81,6 +81,8 @@ func main() {
 	repoTransacciones := repositorios.NuevoTransacciones(conexion.BD)
 	repoPresupuestos := repositorios.NuevoPresupuestos(conexion.BD)
 	repoReportes := repositorios.NuevoReportes(conexion.BD)
+	repoMetas := repositorios.NuevoMetas(conexion.BD)
+	repoAportaciones := repositorios.NuevoAportaciones(conexion.BD)
 
 	servidor := &http.Server{
 		Addr: cfg.Direccion(),
@@ -94,6 +96,9 @@ func main() {
 			Presupuestos:  servicios.NuevoPresupuestos(repoPresupuestos, repoCategorias),
 			Reportes:      servicios.NuevoReportes(repoReportes),
 			CSV:           servicios.NuevoCSV(repoTransacciones, repoCuentas, repoCategorias),
+			// El reloj va nil: el servicio usa el de verdad. Se inyecta solo en
+			// las pruebas, donde "faltan 45 dias" necesita saber que dia es hoy.
+			Metas: servicios.NuevoMetas(repoMetas, repoAportaciones, repoReportes, nil),
 		}),
 		// Sin estos limites una conexion lenta puede quedarse tomada de forma
 		// indefinida.
