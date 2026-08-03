@@ -1,0 +1,48 @@
+meta {
+  name: Registro (usuario nuevo)
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{base_url}}/api/v1/auth/registro
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "nombre": "Usuario de Postman",
+    "email": "{{email_nuevo}}",
+    "password": "Postman1234!",
+    "moneda": "MXN"
+  }
+}
+
+script:pre-request {
+  // Un correo distinto por ejecucion: el email es unico en la base.
+  bru.setVar("email_nuevo", `postman_${Date.now()}@fintrack.mx`);
+}
+
+tests {
+  test("responde 201", function () {
+      expect(res.getStatus()).to.equal(201);
+  });
+
+  const datos = res.getBody().datos;
+  bru.setVar("token_acceso", datos.token_acceso);
+  bru.setVar("token_refresco", datos.token_refresco);
+  test("devuelve los dos tokens", function () {
+      expect(datos.token_acceso).to.be.a("string");
+      expect(datos.token_refresco).to.be.a("string");
+  });
+}
+
+docs {
+  Da de alta un usuario con un correo distinto en cada ejecucion, para que la coleccion se pueda correr las veces que haga falta. Guarda los tokens.
+}
+

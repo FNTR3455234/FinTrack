@@ -1,0 +1,36 @@
+meta {
+  name: Exportar a CSV
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{base_url}}/api/v1/transacciones/exportar?desde=2026-07-01&hasta=2026-07-31
+  body: none
+  auth: inherit
+}
+
+params:query {
+  desde: 2026-07-01
+  hasta: 2026-07-31
+}
+
+tests {
+  const texto = typeof res.getBody() === "string" ? res.getBody() : JSON.stringify(res.getBody());
+
+  test("responde 200", function () {
+      expect(res.getStatus()).to.equal(200);
+  });
+  test("baja como archivo CSV", function () {
+      expect(res.getHeader("content-type")).to.include("text/csv");
+      expect(res.getHeader("content-disposition")).to.include("attachment");
+  });
+  test("la primera fila es el encabezado", function () {
+      expect(texto).to.include("fecha,tipo,cuenta,categoria,monto,descripcion,notas");
+  });
+}
+
+docs {
+  Descarga un archivo con los mismos filtros del listado, sin paginar.
+}
+

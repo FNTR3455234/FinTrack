@@ -1,0 +1,38 @@
+meta {
+  name: Editar una cuenta
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{base_url}}/api/v1/cuentas/{{cuenta_id}}
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "nombre": "Cuenta de prueba editada",
+    "tipo": "debito",
+    "saldo_inicial": 7500,
+    "color": "#111111"
+  }
+}
+
+tests {
+  test("responde 200", function () {
+      expect(res.getStatus()).to.equal(200);
+  });
+  test("guardo el saldo nuevo", function () {
+      expect(res.getBody().datos.saldo_inicial).to.eql(7500);
+  });
+}
+
+docs {
+  Reemplaza los campos editables.
+}
+

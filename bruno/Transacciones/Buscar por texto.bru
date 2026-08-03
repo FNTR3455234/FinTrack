@@ -1,0 +1,26 @@
+meta {
+  name: Buscar por texto
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{base_url}}/api/v1/transacciones?busqueda=despensa
+  body: none
+  auth: inherit
+}
+
+params:query {
+  busqueda: despensa
+}
+
+tests {
+  test("responde 200", function () {
+      expect(res.getStatus()).to.equal(200);
+  });
+}
+
+docs {
+  La busqueda mira la descripcion y las notas. El texto se escapa antes de armar la expresion regular: buscar ".*" devuelve cero resultados en vez de recorrer toda la coleccion.
+}
+

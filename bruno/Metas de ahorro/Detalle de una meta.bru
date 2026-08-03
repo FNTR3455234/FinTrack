@@ -1,0 +1,27 @@
+meta {
+  name: Detalle de una meta
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{base_url}}/api/v1/metas/{{meta_id}}
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("responde 200", function () {
+      expect(res.getStatus()).to.equal(200);
+  });
+  const datos = res.getBody().datos;
+  test("trae las dos aportaciones, de la mas reciente a la mas vieja", function () {
+      expect(datos.detalle).to.have.lengthOf(2);
+      expect(datos.detalle[0].monto).to.eql(3500);
+  });
+}
+
+docs {
+  El progreso mas el detalle de cada aportacion, que es lo que explica el total.
+}
+

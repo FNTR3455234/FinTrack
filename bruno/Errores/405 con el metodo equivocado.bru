@@ -1,0 +1,22 @@
+meta {
+  name: 405 con el metodo equivocado
+  type: http
+  seq: 8
+}
+
+delete {
+  url: {{base_url}}/api/v1/health
+  body: none
+  auth: none
+}
+
+tests {
+  test("responde 405", function () {
+      expect(res.getStatus()).to.equal(405);
+  });
+}
+
+docs {
+  /health solo acepta GET.
+}
+

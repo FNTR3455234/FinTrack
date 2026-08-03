@@ -1,0 +1,35 @@
+meta {
+  name: Editar un presupuesto
+  type: http
+  seq: 3
+}
+
+put {
+  url: {{base_url}}/api/v1/presupuestos/{{presupuesto_id}}
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "categoria_id": "{{categoria_id}}",
+    "monto_limite": 3500,
+    "mes": 7,
+    "anio": 2026
+  }
+}
+
+tests {
+  test("responde 200", function () {
+      expect(res.getStatus()).to.equal(200);
+  });
+}
+
+docs {
+  Cambia el limite del mes.
+}
+

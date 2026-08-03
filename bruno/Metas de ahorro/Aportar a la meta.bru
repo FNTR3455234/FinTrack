@@ -1,0 +1,38 @@
+meta {
+  name: Aportar a la meta
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{base_url}}/api/v1/metas/{{meta_id}}/aportaciones
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "monto": 2500,
+    "fecha": "2026-08-01T12:00:00Z",
+    "nota": "Primera aportacion"
+  }
+}
+
+tests {
+  test("responde 201", function () {
+      expect(res.getStatus()).to.equal(201);
+  });
+  test("queda colgada de la meta de la ruta", function () {
+      expect(res.getBody().datos.meta_id).to.eql(bru.getVar("meta_id"));
+  });
+  bru.setVar("aportacion_id", res.getBody().datos.id);
+}
+
+docs {
+  Dinero apartado para la meta. La meta llega en la ruta, no en el cuerpo.
+}
+

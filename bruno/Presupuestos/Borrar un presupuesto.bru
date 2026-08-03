@@ -1,0 +1,22 @@
+meta {
+  name: Borrar un presupuesto
+  type: http
+  seq: 4
+}
+
+delete {
+  url: {{base_url}}/api/v1/presupuestos/{{presupuesto_id}}
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("responde 204", function () {
+      expect(res.getStatus()).to.equal(204);
+  });
+}
+
+docs {
+  Un presupuesto no es referencia de nada: se borra sin mas.
+}
+

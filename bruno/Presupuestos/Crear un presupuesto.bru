@@ -1,0 +1,36 @@
+meta {
+  name: Crear un presupuesto
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{base_url}}/api/v1/presupuestos
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "categoria_id": "{{categoria_id}}",
+    "monto_limite": 3000,
+    "mes": 7,
+    "anio": 2026
+  }
+}
+
+tests {
+  test("responde 201", function () {
+      expect(res.getStatus()).to.equal(201);
+  });
+  bru.setVar("presupuesto_id", res.getBody().datos.id);
+}
+
+docs {
+  Solo se presupuestan categorias de gasto. Un indice unico impide dos presupuestos para la misma categoria y mes.
+}
+

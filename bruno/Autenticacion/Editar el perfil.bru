@@ -1,0 +1,33 @@
+meta {
+  name: Editar el perfil
+  type: http
+  seq: 5
+}
+
+put {
+  url: {{base_url}}/api/v1/auth/perfil
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "nombre": "Demo FinTrack",
+    "moneda": "MXN"
+  }
+}
+
+tests {
+  test("responde 200", function () {
+      expect(res.getStatus()).to.equal(200);
+  });
+}
+
+docs {
+  Cambia el nombre y la moneda. El correo y la contraseña no se editan aqui.
+}
+

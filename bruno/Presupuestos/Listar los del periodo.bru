@@ -1,0 +1,27 @@
+meta {
+  name: Listar los del periodo
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{base_url}}/api/v1/presupuestos?mes=7&anio=2026
+  body: none
+  auth: inherit
+}
+
+params:query {
+  mes: 7
+  anio: 2026
+}
+
+tests {
+  test("responde 200", function () {
+      expect(res.getStatus()).to.equal(200);
+  });
+}
+
+docs {
+  Sin mes ni anio los devuelve todos.
+}
+

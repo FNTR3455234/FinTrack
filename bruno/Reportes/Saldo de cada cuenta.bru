@@ -1,0 +1,22 @@
+meta {
+  name: Saldo de cada cuenta
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{base_url}}/api/v1/reportes/saldos
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("responde 200", function () {
+      expect(res.getStatus()).to.equal(200);
+  });
+}
+
+docs {
+  saldo_inicial + ingresos - gastos. No se guarda: se calcula cruzando cuentas con transacciones.
+}
+

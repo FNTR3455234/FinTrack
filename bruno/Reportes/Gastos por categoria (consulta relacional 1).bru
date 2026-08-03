@@ -1,0 +1,36 @@
+meta {
+  name: Gastos por categoria (consulta relacional 1)
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{base_url}}/api/v1/reportes/gastos-por-categoria?mes=7&anio=2026
+  body: none
+  auth: inherit
+}
+
+params:query {
+  mes: 7
+  anio: 2026
+}
+
+tests {
+  test("responde 200", function () {
+      expect(res.getStatus()).to.equal(200);
+  });
+  test("viene ordenado de mayor a menor gasto", function () {
+      const filas = res.getBody().datos;
+      for (let i = 1; i < filas.length; i++) {
+          expect(filas[i - 1].total).to.be.at.least(filas[i].total);
+      }
+  });
+  test("cada fila trae el nombre de su categoria", function () {
+      res.getBody().datos.forEach(f => expect(f.nombre).to.be.a("string"));
+  });
+}
+
+docs {
+  Cruza transacciones con categorias. Devuelve el total, el numero de movimientos y el peso porcentual de cada categoria.
+}
+

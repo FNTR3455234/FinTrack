@@ -12,7 +12,7 @@ MONGO_URI_DEV = mongodb://fintrack_admin:fintrack_dev_2026@localhost:27017/?auth
 MONGOSH = mongosh -u fintrack_admin -p fintrack_dev_2026 --authenticationDatabase admin --quiet
 
 .DEFAULT_GOAL := help
-.PHONY: help up down dev web test test-integracion lint seed build swagger postman env arriba abajo logs seed-prod
+.PHONY: help up down dev web test test-integracion lint seed build swagger postman bruno env arriba abajo logs seed-prod
 
 help: ## Muestra esta ayuda
 	@echo "FinTrack - atajos disponibles:"
@@ -27,6 +27,7 @@ help: ## Muestra esta ayuda
 	@echo "  make build   Compila el backend y el frontend                    [fase 7]"
 	@echo "  make swagger Regenera la especificacion OpenAPI de backend/docs"
 	@echo "  make postman Corre la coleccion de Postman con newman (necesita la API viva)"
+	@echo "  make bruno   Regenera la coleccion de Bruno desde la de Postman"
 	@echo ""
 	@echo "Stack completo en contenedores (docker-compose.yml):"
 	@echo "  make env       Genera un .env con secretos aleatorios"
@@ -81,6 +82,11 @@ swagger: ## Regenera backend/docs a partir de las anotaciones de los handlers
 
 postman: ## Corre la coleccion de Postman contra la API que ya este corriendo
 	npx --yes newman run postman/FinTrack.postman_collection.json -e postman/FinTrack.postman_environment.json
+
+# La coleccion de Bruno se genera, no se edita: los cambios van en la de Postman
+# y despues se corre esto. Ver bruno/README.md y la decision 047.
+bruno: ## Regenera bruno/ a partir de la coleccion de Postman
+	node bruno/generar.js
 
 # --- Stack completo en contenedores -----------------------------------------
 

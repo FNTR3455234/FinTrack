@@ -1,0 +1,30 @@
+meta {
+  name: 400 con un periodo imposible
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{base_url}}/api/v1/reportes/resumen?mes=13&anio=2026
+  body: none
+  auth: inherit
+}
+
+params:query {
+  mes: 13
+  anio: 2026
+}
+
+tests {
+  test("responde 400", function () {
+      expect(res.getStatus()).to.equal(400);
+  });
+  test("el codigo es PERIODO_INVALIDO", function () {
+      expect(res.getBody().error.codigo).to.eql("PERIODO_INVALIDO");
+  });
+}
+
+docs {
+  El mes 13 no existe. Se rechaza en vez de devolver ceros, que se leerian como "no gastaste nada".
+}
+

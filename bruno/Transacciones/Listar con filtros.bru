@@ -1,0 +1,37 @@
+meta {
+  name: Listar con filtros
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{base_url}}/api/v1/transacciones?desde=2026-07-01&hasta=2026-07-31&tipo=gasto&orden=fecha_desc&pagina=1&limite=10
+  body: none
+  auth: inherit
+}
+
+params:query {
+  desde: 2026-07-01
+  hasta: 2026-07-31
+  tipo: gasto
+  orden: fecha_desc
+  pagina: 1
+  limite: 10
+}
+
+tests {
+  test("responde 200", function () {
+      expect(res.getStatus()).to.equal(200);
+  });
+  test("trae la meta de paginacion", function () {
+      const meta = res.getBody().meta;
+      expect(meta.pagina).to.eql(1);
+      expect(meta.limite).to.eql(10);
+      expect(meta.total_paginas).to.be.at.least(1);
+  });
+}
+
+docs {
+  Rango de fechas, tipo, orden y paginacion. La meta trae pagina, limite, total y total_paginas.
+}
+

@@ -1,0 +1,29 @@
+meta {
+  name: Listar cuentas
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{base_url}}/api/v1/cuentas?incluir_archivadas=false
+  body: none
+  auth: inherit
+}
+
+params:query {
+  incluir_archivadas: false
+}
+
+tests {
+  test("responde 200", function () {
+      expect(res.getStatus()).to.equal(200);
+  });
+  test("devuelve una lista", function () {
+      expect(res.getBody().datos).to.be.an("array");
+  });
+}
+
+docs {
+  Solo las del usuario del token.
+}
+

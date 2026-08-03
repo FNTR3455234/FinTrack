@@ -1,0 +1,22 @@
+meta {
+  name: Obtener una cuenta
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{base_url}}/api/v1/cuentas/{{cuenta_id}}
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("responde 200", function () {
+      expect(res.getStatus()).to.equal(200);
+  });
+}
+
+docs {
+  Por identificador.
+}
+

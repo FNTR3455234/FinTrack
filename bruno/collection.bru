@@ -1,0 +1,15 @@
+auth {
+  mode: bearer
+}
+
+auth:bearer {
+  token: {{token_acceso}}
+}
+
+tests {
+  // Se aplica a TODAS las peticiones de la coleccion.
+  test("responde en menos de dos segundos", function () {
+      expect(res.getResponseTime()).to.be.below(2000);
+  });
+}
+

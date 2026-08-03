@@ -1,0 +1,40 @@
+meta {
+  name: Listar metas con su progreso
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{base_url}}/api/v1/metas
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("responde 200", function () {
+      expect(res.getStatus()).to.equal(200);
+  });
+  const datos = res.getBody().datos;
+  const mia = datos.metas.find(m => m.meta_id === bru.getVar("meta_id"));
+  test("suma las dos aportaciones", function () {
+      expect(mia.ahorrado).to.eql(6000);
+      expect(mia.aportaciones).to.eql(2);
+  });
+  test("calcula lo que falta y el porcentaje", function () {
+      expect(mia.restante).to.eql(4000);
+      expect(mia.porcentaje).to.eql(60);
+  });
+  test("trae estado y ritmo mensual", function () {
+      expect(mia.estado).to.be.oneOf(["en_curso", "vencida", "cumplida"]);
+      expect(mia).to.have.property("ritmo_mensual");
+  });
+  test("el resumen acompaña al listado", function () {
+      expect(datos.resumen).to.have.property("total");
+      expect(datos.resumen.total).to.be.above(0);
+  });
+}
+
+docs {
+  Consulta relacional 3. Devuelve cada meta con lo ahorrado, lo que falta, el porcentaje, el estado y el ritmo mensual necesario, mas el resumen del conjunto.
+}
+

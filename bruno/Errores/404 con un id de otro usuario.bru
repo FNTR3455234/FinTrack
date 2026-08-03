@@ -1,0 +1,22 @@
+meta {
+  name: 404 con un id de otro usuario
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{base_url}}/api/v1/cuentas/650100000000000000000099
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("responde 404", function () {
+      expect(res.getStatus()).to.equal(404);
+  });
+}
+
+docs {
+  Se responde 404 y no 403: un 403 confirmaria que el recurso existe.
+}
+

@@ -1,0 +1,31 @@
+meta {
+  name: Estado de presupuestos (consulta relacional 2)
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{base_url}}/api/v1/reportes/estado-presupuestos?mes=7&anio=2026
+  body: none
+  auth: inherit
+}
+
+params:query {
+  mes: 7
+  anio: 2026
+}
+
+tests {
+  test("responde 200", function () {
+      expect(res.getStatus()).to.equal(200);
+  });
+  test("el semaforo solo toma tres valores", function () {
+      const validos = ["ok", "alerta", "excedido"];
+      res.getBody().datos.forEach(f => expect(validos).to.include(f.estado));
+  });
+}
+
+docs {
+  Cruza presupuestos con categorias y con transacciones. Marca cada presupuesto como ok, alerta o excedido.
+}
+

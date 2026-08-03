@@ -1,0 +1,41 @@
+meta {
+  name: Login (usuario demo)
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{base_url}}/api/v1/auth/login
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "email": "{{email_demo}}",
+    "password": "{{password_demo}}"
+  }
+}
+
+tests {
+  test("responde 200", function () {
+      expect(res.getStatus()).to.equal(200);
+  });
+
+  const datos = res.getBody().datos;
+  bru.setVar("token_acceso", datos.token_acceso);
+  bru.setVar("token_refresco", datos.token_refresco);
+  test("devuelve los dos tokens", function () {
+      expect(datos.token_acceso).to.be.a("string");
+      expect(datos.token_refresco).to.be.a("string");
+  });
+}
+
+docs {
+  Inicia sesion con el usuario de la semilla, que trae 6 meses de historia. A partir de aqui la coleccion trabaja con esos datos.
+}
+

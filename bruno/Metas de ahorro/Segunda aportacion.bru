@@ -1,0 +1,33 @@
+meta {
+  name: Segunda aportacion
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{base_url}}/api/v1/metas/{{meta_id}}/aportaciones
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "monto": 3500,
+    "fecha": "2026-08-02T12:00:00Z"
+  }
+}
+
+tests {
+  test("responde 201", function () {
+      expect(res.getStatus()).to.equal(201);
+  });
+}
+
+docs {
+  Una segunda aportacion, para comprobar que el progreso suma.
+}
+

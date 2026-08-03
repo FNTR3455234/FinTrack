@@ -1,0 +1,40 @@
+meta {
+  name: Crear una meta
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{base_url}}/api/v1/metas
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "nombre": "Meta de prueba",
+    "monto_objetivo": 10000,
+    "fecha_limite": "2026-12-31T12:00:00Z",
+    "color": "#0891B2",
+    "notas": "Creada por la coleccion"
+  }
+}
+
+tests {
+  test("responde 201", function () {
+      expect(res.getStatus()).to.equal(201);
+  });
+  test("el dia se guarda anclado a las 12:00 UTC", function () {
+      expect(res.getBody().datos.fecha_limite).to.eql("2026-12-31T12:00:00Z");
+  });
+  bru.setVar("meta_id", res.getBody().datos.id);
+}
+
+docs {
+  La fecha limite es obligatoria: es lo que permite calcular el ritmo mensual.
+}
+

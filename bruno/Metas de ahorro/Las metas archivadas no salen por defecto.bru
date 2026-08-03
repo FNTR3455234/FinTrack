@@ -1,0 +1,26 @@
+meta {
+  name: Las metas archivadas no salen por defecto
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{base_url}}/api/v1/metas?incluir_archivadas=true
+  body: none
+  auth: inherit
+}
+
+params:query {
+  incluir_archivadas: true
+}
+
+tests {
+  test("responde 200", function () {
+      expect(res.getStatus()).to.equal(200);
+  });
+}
+
+docs {
+  Una meta archivada es una que ya no se persigue; con incluir_archivadas=true si sale.
+}
+

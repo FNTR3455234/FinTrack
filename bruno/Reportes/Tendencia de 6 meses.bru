@@ -1,0 +1,31 @@
+meta {
+  name: Tendencia de 6 meses
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{base_url}}/api/v1/reportes/tendencia?mes=7&anio=2026&meses=6
+  body: none
+  auth: inherit
+}
+
+params:query {
+  mes: 7
+  anio: 2026
+  meses: 6
+}
+
+tests {
+  test("responde 200", function () {
+      expect(res.getStatus()).to.equal(200);
+  });
+  test("devuelve exactamente 6 meses", function () {
+      expect(res.getBody().datos).to.have.lengthOf(6);
+  });
+}
+
+docs {
+  Serie mensual. Los meses sin movimientos tambien salen, con ceros.
+}
+

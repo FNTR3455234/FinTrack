@@ -53,11 +53,17 @@ Salida real de la última ejecución:
 │                         │         executed │           failed │
 ├─────────────────────────┼──────────────────┼──────────────────┤
 │              iterations │                1 │                0 │
-│                requests │               41 │                0 │
-│            test-scripts │               83 │                0 │
-│              assertions │              105 │                0 │
+│                requests │               53 │                0 │
+│            test-scripts │              107 │                0 │
+│              assertions │              139 │                0 │
 └─────────────────────────┴──────────────────┴──────────────────┘
 ```
+
+### ¿Prefieres Bruno?
+
+La misma colección está también en [`bruno/`](../bruno/README.md), como archivos de texto
+versionables, uno por petición. **No es una segunda colección que mantener**: la genera
+`make bruno` a partir de este `.json`.
 
 ## Qué contiene
 
@@ -126,7 +132,7 @@ Además del código de estado, las aserciones miran el contenido:
 - **Tendencia** de 6 meses devuelve exactamente 6 puntos, aunque algún mes esté vacío.
 - **Perfil** nunca incluye la palabra `password` en la respuesta.
 - **Exportar CSV** baja con `Content-Type: text/csv` y `Content-Disposition: attachment`.
-- Y una prueba **a nivel de colección**, que corre en las 41: ninguna respuesta puede tardar más de
+- Y una prueba **a nivel de colección**, que corre en las 53: ninguna respuesta puede tardar más de
   dos segundos.
 
 ## Importar un CSV

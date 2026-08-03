@@ -1,0 +1,27 @@
+meta {
+  name: El progreso se recalcula solo
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{base_url}}/api/v1/metas/{{meta_id}}
+  body: none
+  auth: inherit
+}
+
+tests {
+  const datos = res.getBody().datos;
+  test("sigue habiendo 6000 ahorrados", function () {
+      expect(datos.ahorrado).to.eql(6000);
+  });
+  test("pero ahora son el 30 por ciento", function () {
+      expect(datos.porcentaje).to.eql(30);
+      expect(datos.restante).to.eql(14000);
+  });
+}
+
+docs {
+  Lo ahorrado no cambia; el porcentaje si, porque el objetivo es otro.
+}
+

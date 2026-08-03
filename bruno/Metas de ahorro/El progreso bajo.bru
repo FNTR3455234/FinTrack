@@ -1,0 +1,23 @@
+meta {
+  name: El progreso bajo
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{base_url}}/api/v1/metas/{{meta_id}}
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("quedan 3500", function () {
+      expect(res.getBody().datos.ahorrado).to.eql(3500);
+      expect(res.getBody().datos.detalle).to.have.lengthOf(1);
+  });
+}
+
+docs {
+  Quedan 3500 de los 6000: la aportacion de 2500 se fue.
+}
+

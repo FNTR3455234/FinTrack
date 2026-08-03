@@ -1,0 +1,22 @@
+meta {
+  name: Borrar la categoria de prueba
+  type: http
+  seq: 1
+}
+
+delete {
+  url: {{base_url}}/api/v1/categorias/{{categoria_id}}
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("responde 204", function () {
+      expect(res.getStatus()).to.equal(204);
+  });
+}
+
+docs {
+  Ya no tiene movimientos ni presupuestos: se puede borrar.
+}
+

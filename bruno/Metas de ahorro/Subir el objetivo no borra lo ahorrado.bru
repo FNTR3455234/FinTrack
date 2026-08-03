@@ -1,0 +1,38 @@
+meta {
+  name: Subir el objetivo no borra lo ahorrado
+  type: http
+  seq: 6
+}
+
+put {
+  url: {{base_url}}/api/v1/metas/{{meta_id}}
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "nombre": "Meta de prueba",
+    "monto_objetivo": 20000,
+    "fecha_limite": "2026-12-31T12:00:00Z",
+    "color": "#7C3AED"
+  }
+}
+
+tests {
+  test("responde 200", function () {
+      expect(res.getStatus()).to.equal(200);
+  });
+  test("el objetivo es el nuevo", function () {
+      expect(res.getBody().datos.monto_objetivo).to.eql(20000);
+  });
+}
+
+docs {
+  Editar la meta deja las aportaciones donde estaban: solo cambia el porcentaje.
+}
+

@@ -1,0 +1,38 @@
+meta {
+  name: Importar desde CSV
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{base_url}}/api/v1/transacciones/importar
+  body: multipartForm
+  auth: inherit
+}
+
+body:multipart-form {
+  archivo: @file(ejemplo.csv)
+}
+
+tests {
+  test("responde 201", function () {
+      expect(res.getStatus()).to.equal(201);
+  });
+  test("importa las dos filas del archivo", function () {
+      expect(res.getBody().datos.importadas).to.eql(2);
+  });
+}
+
+docs {
+  El archivo ya viene enganchado (ejemplo.csv, al lado de bruno.json), asi que esta
+  peticion corre sin tocar nada. En Postman hay que elegirlo a mano en cada ejecucion.
+
+  O entra el archivo completo o no entra nada: si una sola fila falla, responde 400 con
+  la lista de errores y no guarda ninguna. Para verlo, cambia el nombre de la cuenta en
+  ejemplo.csv por uno que no exista.
+
+  OJO: cada ejecucion añade de verdad los dos movimientos, con fecha de agosto de 2026.
+  Ninguna otra peticion de la coleccion los mira -- todas trabajan sobre julio -- pero se
+  acumulan en la base si la corres muchas veces.
+}
+

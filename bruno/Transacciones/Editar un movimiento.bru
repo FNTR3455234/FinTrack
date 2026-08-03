@@ -1,0 +1,40 @@
+meta {
+  name: Editar un movimiento
+  type: http
+  seq: 5
+}
+
+put {
+  url: {{base_url}}/api/v1/transacciones/{{transaccion_id}}
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "cuenta_id": "{{cuenta_id}}",
+    "categoria_id": "{{categoria_id}}",
+    "tipo": "gasto",
+    "monto": 900,
+    "descripcion": "Movimiento editado",
+    "fecha": "2026-07-16T12:00:00Z"
+  }
+}
+
+tests {
+  test("responde 200", function () {
+      expect(res.getStatus()).to.equal(200);
+  });
+  test("creado_en no cambia al editar", function () {
+      expect(res.getBody().datos.creado_en).to.be.a("string");
+  });
+}
+
+docs {
+  El tipo tiene que seguir coincidiendo con el de su categoria.
+}
+

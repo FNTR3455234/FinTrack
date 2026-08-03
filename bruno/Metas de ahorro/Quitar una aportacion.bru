@@ -1,0 +1,22 @@
+meta {
+  name: Quitar una aportacion
+  type: http
+  seq: 8
+}
+
+delete {
+  url: {{base_url}}/api/v1/metas/{{meta_id}}/aportaciones/{{aportacion_id}}
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("responde 204", function () {
+      expect(res.getStatus()).to.equal(204);
+  });
+}
+
+docs {
+  Al quitarla, el progreso baja.
+}
+

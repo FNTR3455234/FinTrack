@@ -1,0 +1,27 @@
+meta {
+  name: Perfil
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{base_url}}/api/v1/auth/perfil
+  body: none
+  auth: inherit
+}
+
+tests {
+  const texto = typeof res.getBody() === "string" ? res.getBody() : JSON.stringify(res.getBody());
+
+  test("responde 200", function () {
+      expect(res.getStatus()).to.equal(200);
+  });
+  test("nunca devuelve la contraseña", function () {
+      expect(texto).to.not.include("password");
+  });
+}
+
+docs {
+  Datos del dueño del token.
+}
+

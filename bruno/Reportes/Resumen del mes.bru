@@ -1,0 +1,31 @@
+meta {
+  name: Resumen del mes
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{base_url}}/api/v1/reportes/resumen?mes=7&anio=2026
+  body: none
+  auth: inherit
+}
+
+params:query {
+  mes: 7
+  anio: 2026
+}
+
+tests {
+  test("responde 200", function () {
+      expect(res.getStatus()).to.equal(200);
+  });
+  test("el balance cuadra", function () {
+      const d = res.getBody().datos;
+      expect(Math.abs(d.ingresos - d.gastos - d.balance)).to.be.below(0.01);
+  });
+}
+
+docs {
+  Ingresos, gastos, balance, saldo disponible y conteo del semaforo.
+}
+

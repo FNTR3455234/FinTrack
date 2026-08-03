@@ -43,6 +43,7 @@ function Invoke-Ayuda {
     Write-Host "  .\make.ps1 build   Compila el backend y el frontend                    [fase 7]"
     Write-Host "  .\make.ps1 swagger Regenera la especificacion OpenAPI de backend/docs"
     Write-Host "  .\make.ps1 postman Corre la coleccion de Postman con newman (necesita la API viva)"
+    Write-Host "  .\make.ps1 bruno   Regenera la coleccion de Bruno desde la de Postman"
     Write-Host ""
     Write-Host "Stack completo en contenedores (docker-compose.yml):"
     Write-Host "  .\make.ps1 env       Genera un .env con secretos aleatorios"
@@ -176,6 +177,13 @@ function Invoke-Postman {
     Verificar "correr la coleccion de Postman"
 }
 
+function Invoke-Bruno {
+    # La coleccion de Bruno se genera, no se edita: los cambios van en la de
+    # Postman y despues se corre esto. Ver bruno/README.md y la decision 047.
+    & node "$raiz\bruno\generar.js"
+    Verificar "regenerar la coleccion de Bruno"
+}
+
 # --- Stack completo en contenedores -----------------------------------------
 
 # Secreto genera una cadena hexadecimal aleatoria. Se usa el generador
@@ -240,6 +248,7 @@ switch ($Target.ToLower()) {
     "build" { Invoke-Build }
     "swagger" { Invoke-Swagger }
     "postman" { Invoke-Postman }
+    "bruno"   { Invoke-Bruno }
     "env"       { Invoke-Env }
     "arriba"    { Invoke-Arriba }
     "abajo"     { Invoke-Abajo }

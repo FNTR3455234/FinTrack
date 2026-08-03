@@ -776,6 +776,28 @@ justificarlas después. Formato por entrada: **decisión, contexto, alternativas
 
 ---
 
+## 047 — La colección de Bruno se genera desde la de Postman
+
+**Fecha:** 2026-08-02 · **Fase:** 10
+
+- **Contexto:** Postman no importó bien la colección, y Bruno guarda cada petición como un archivo
+  de texto versionable, que en un `diff` se lee y en un `.json` de 80 kB no.
+- **Alternativas:** (a) usar el importador de Postman de Bruno — es justo lo que ya había fallado,
+  y deja una copia que nadie sabe reconstruir; (b) mantener las dos colecciones a mano;
+  (c) tirar Postman y quedarse solo con Bruno — no, la rúbrica pide Postman y el CI corre Newman.
+- **Decisión:** `bruno/generar.js` convierte la colección de Postman a `.bru` y borra la carpeta
+  entera en cada ejecución (`make bruno`). La fuente de verdad es Postman; Bruno **deriva**.
+- **Por qué:** es la [046](#046--el-makefile-se-probó-en-linux-de-verdad-y-estaba-roto) otra vez, y
+  esta vez vista venir. Dos colecciones a mano significa que una aserción arreglada en Postman se
+  queda sin arreglar en Bruno, y nadie se entera hasta que alguien corre la que no se usa. Un
+  conversor de 200 líneas cuesta menos que esa deuda. Además falla al generar —no en tiempo de
+  ejecución— si aparece un `pm.*` que no sabe traducir.
+- **Lo que no traduce igual:** `pm.response.text()` no tiene equivalente, porque el `getBody()` de
+  Bruno devuelve el objeto ya parseado cuando la respuesta es JSON; el conversor declara una
+  variable `texto` donde hace falta. El detalle está en [`bruno/README.md`](../bruno/README.md).
+
+---
+
 ## Pendientes anotados (se resuelven en su fase)
 
 - **Fase 3 — Refresh token sin estado:** el refresh token no se guarda en la base, así que se puede

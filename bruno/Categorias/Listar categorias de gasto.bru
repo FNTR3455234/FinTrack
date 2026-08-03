@@ -1,0 +1,29 @@
+meta {
+  name: Listar categorias de gasto
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{base_url}}/api/v1/categorias?tipo=gasto
+  body: none
+  auth: inherit
+}
+
+params:query {
+  tipo: gasto
+}
+
+tests {
+  test("responde 200", function () {
+      expect(res.getStatus()).to.equal(200);
+  });
+  test("todas son de gasto", function () {
+      res.getBody().datos.forEach(c => expect(c.tipo).to.eql("gasto"));
+  });
+}
+
+docs {
+  Filtradas por tipo.
+}
+

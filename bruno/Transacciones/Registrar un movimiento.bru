@@ -1,0 +1,42 @@
+meta {
+  name: Registrar un movimiento
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{base_url}}/api/v1/transacciones
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "cuenta_id": "{{cuenta_id}}",
+    "categoria_id": "{{categoria_id}}",
+    "tipo": "gasto",
+    "monto": 850.5,
+    "descripcion": "Movimiento de prueba",
+    "fecha": "2026-07-15T12:00:00Z",
+    "notas": "creado desde Postman"
+  }
+}
+
+tests {
+  test("responde 201", function () {
+      expect(res.getStatus()).to.equal(201);
+  });
+  bru.setVar("transaccion_id", res.getBody().datos.id);
+  test("redondea a centavos", function () {
+      expect(res.getBody().datos.monto).to.eql(850.5);
+  });
+}
+
+docs {
+  Si el gasto deja su categoria al 80% o mas de su presupuesto del mes, la respuesta trae ademas el campo alerta.
+}
+

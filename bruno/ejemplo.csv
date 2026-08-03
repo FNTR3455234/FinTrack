@@ -1,0 +1,3 @@
+fecha,tipo,cuenta,categoria,monto,descripcion,notas
+2026-08-05,gasto,BBVA Debito,Supermercado,432.10,Despensa de ejemplo,importado desde Postman
+2026-08-06,ingreso,BBVA Debito,Freelance,2800.00,Proyecto de ejemplo,

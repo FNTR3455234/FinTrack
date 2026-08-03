@@ -1,0 +1,38 @@
+meta {
+  name: Refrescar el token
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{base_url}}/api/v1/auth/refresh
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "token_refresco": "{{token_refresco}}"
+  }
+}
+
+tests {
+  test("responde 200", function () {
+      expect(res.getStatus()).to.equal(200);
+  });
+  bru.setVar("token_acceso", res.getBody().datos.token_acceso);
+  test("renueva el acceso y no toca el refresco", function () {
+      const datos = res.getBody().datos;
+      expect(datos.token_acceso).to.be.a("string");
+      expect(datos.token_refresco).to.be.undefined;
+  });
+}
+
+docs {
+  Devuelve SOLO un token de acceso nuevo: el de refresco sigue valido hasta que expire, a los 7 dias.
+}
+

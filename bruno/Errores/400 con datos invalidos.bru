@@ -1,0 +1,38 @@
+meta {
+  name: 400 con datos invalidos
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{base_url}}/api/v1/cuentas
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "nombre": "",
+    "tipo": "cripto",
+    "saldo_inicial": 0,
+    "color": "azul"
+  }
+}
+
+tests {
+  test("responde 400", function () {
+      expect(res.getStatus()).to.equal(400);
+  });
+  test("enumera todos los campos malos", function () {
+      expect(res.getBody().error.detalles.length).to.be.at.least(3);
+  });
+}
+
+docs {
+  Falta el nombre, el tipo no existe y el color no es hexadecimal. El error trae la lista completa de fallos, no solo el primero.
+}
+

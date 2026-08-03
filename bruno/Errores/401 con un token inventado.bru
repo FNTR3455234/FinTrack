@@ -1,0 +1,29 @@
+meta {
+  name: 401 con un token inventado
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{base_url}}/api/v1/cuentas
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer token.que.no.vale
+}
+
+tests {
+  test("responde 401", function () {
+      expect(res.getStatus()).to.equal(401);
+  });
+  test("el codigo es TOKEN_INVALIDO", function () {
+      expect(res.getBody().error.codigo).to.eql("TOKEN_INVALIDO");
+  });
+}
+
+docs {
+  El token no esta firmado con el secreto del servidor. La peticion va sin la autenticacion de la coleccion, porque el bearer se aplica despues del script previo y pisaria la cabecera.
+}
+

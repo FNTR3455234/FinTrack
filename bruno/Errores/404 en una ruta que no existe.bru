@@ -1,0 +1,25 @@
+meta {
+  name: 404 en una ruta que no existe
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{base_url}}/api/v1/no-existe
+  body: none
+  auth: none
+}
+
+tests {
+  test("responde 404", function () {
+      expect(res.getStatus()).to.equal(404);
+  });
+  test("el codigo es RUTA_NO_ENCONTRADA", function () {
+      expect(res.getBody().error.codigo).to.eql("RUTA_NO_ENCONTRADA");
+  });
+}
+
+docs {
+  Hasta el 404 de ruta responde con el mismo formato JSON, no con el texto plano de Gin.
+}
+

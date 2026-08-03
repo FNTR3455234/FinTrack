@@ -1,0 +1,36 @@
+meta {
+  name: Archivar una categoria
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{base_url}}/api/v1/categorias/{{categoria_id}}
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "nombre": "Categoria de prueba (Postman)",
+    "tipo": "gasto",
+    "color": "#EA580C",
+    "icono": "prueba",
+    "archivada": false
+  }
+}
+
+tests {
+  test("responde 200", function () {
+      expect(res.getStatus()).to.equal(200);
+  });
+}
+
+docs {
+  Archivar en vez de borrar es lo que se hace cuando ya tiene movimientos.
+}
+

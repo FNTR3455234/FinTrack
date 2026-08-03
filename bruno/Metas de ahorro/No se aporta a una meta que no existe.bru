@@ -1,0 +1,36 @@
+meta {
+  name: No se aporta a una meta que no existe
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{base_url}}/api/v1/metas/650000000000000000000999/aportaciones
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "monto": 100,
+    "fecha": "2026-08-02T12:00:00Z"
+  }
+}
+
+tests {
+  test("responde 404", function () {
+      expect(res.getStatus()).to.equal(404);
+  });
+  test("con el codigo META_NO_ENCONTRADA", function () {
+      expect(res.getBody().error.codigo).to.eql("META_NO_ENCONTRADA");
+  });
+}
+
+docs {
+  Sin esta comprobacion quedarian aportaciones colgando de una meta inventada.
+}
+

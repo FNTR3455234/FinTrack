@@ -1,0 +1,36 @@
+meta {
+  name: Crear una cuenta
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{base_url}}/api/v1/cuentas
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "nombre": "Cuenta de prueba (Postman)",
+    "tipo": "debito",
+    "saldo_inicial": 5000,
+    "color": "#2563EB"
+  }
+}
+
+tests {
+  test("responde 201", function () {
+      expect(res.getStatus()).to.equal(201);
+  });
+  bru.setVar("cuenta_id", res.getBody().datos.id);
+}
+
+docs {
+  Guarda el id en cuenta_id.
+}
+

@@ -1,0 +1,28 @@
+meta {
+  name: Estado del servicio
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{base_url}}/api/v1/health
+  body: none
+  auth: none
+}
+
+vars:pre-request {
+  base_url: http://127.0.0.1:8080
+}
+
+tests {
+  test("responde 200", function () {
+      expect(res.getStatus()).to.equal(200);
+  });
+  test("mongo responde", function () {
+      expect(res.getBody().datos.mongo).to.eql("ok");
+  });
+}
+
+docs {
+  Responde 200 si la API y MongoDB estan vivos, y 503 si la base no contesta.
+}

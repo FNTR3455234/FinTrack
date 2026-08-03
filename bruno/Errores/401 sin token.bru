@@ -1,0 +1,27 @@
+meta {
+  name: 401 sin token
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{base_url}}/api/v1/cuentas
+  body: none
+  auth: none
+}
+
+tests {
+  test("responde 401", function () {
+      expect(res.getStatus()).to.equal(401);
+  });
+  test("el error trae codigo y mensaje", function () {
+      const e = res.getBody().error;
+      expect(e.codigo).to.eql("NO_AUTENTICADO");
+      expect(e.mensaje).to.be.a("string");
+  });
+}
+
+docs {
+  Sin encabezado Authorization.
+}
+

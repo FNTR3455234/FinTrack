@@ -1,0 +1,22 @@
+meta {
+  name: Borrar la meta de prueba
+  type: http
+  seq: 3
+}
+
+delete {
+  url: {{base_url}}/api/v1/metas/{{meta_id}}
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("responde 204", function () {
+      expect(res.getStatus()).to.equal(204);
+  });
+}
+
+docs {
+  Se lleva tambien sus aportaciones: una aportacion no significa nada sin su meta.
+}
+

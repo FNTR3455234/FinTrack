@@ -1,0 +1,22 @@
+meta {
+  name: Borrar un movimiento
+  type: http
+  seq: 6
+}
+
+delete {
+  url: {{base_url}}/api/v1/transacciones/{{transaccion_id}}
+  body: none
+  auth: inherit
+}
+
+tests {
+  test("responde 204", function () {
+      expect(res.getStatus()).to.equal(204);
+  });
+}
+
+docs {
+  Se borra de verdad: una transaccion no es referencia de nada mas.
+}
+

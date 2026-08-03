@@ -13,7 +13,7 @@ por cuentas y categorías, ponles un límite mensual y mira a dónde se te va el
 | Backend | Go 1.25+ · Gin · driver oficial `mongo-driver/v2` · JWT · bcrypt |
 | Frontend | React 18 · Vite · React Router · axios · Recharts · CSS Modules |
 | Infraestructura | Docker · Docker Compose · nginx · GitHub Actions |
-| Pruebas | testify (Go) · colección de Postman |
+| Pruebas | testify (Go) · colección de Postman (y la misma en Bruno) |
 
 ## Arranque rápido
 
@@ -102,6 +102,7 @@ Los mismos targets existen en `Makefile` (Linux, macOS y el CI) y en `make.ps1` 
 | `make build` | Compila backend y frontend | fase 7 |
 | `make swagger` | Regenera la especificación OpenAPI | fase 6 |
 | `make postman` | Corre la colección de Postman con Newman | fase 6 |
+| `make bruno` | Regenera la colección de Bruno desde la de Postman | fase 10 |
 | `make env` | Genera un `.env` con secretos aleatorios | fase 8 |
 | `make arriba` / `make abajo` | Levanta o detiene el stack completo | fase 8 |
 | `make logs` / `make seed-prod` | Bitácora y semilla del stack completo | fase 8 |
@@ -192,7 +193,7 @@ El detalle, con cómo se midió cada cosa, está en
 |---|---|
 | [`docs/arquitectura.md`](docs/arquitectura.md) | Los tres contenedores, las capas, el aislamiento por usuario, la revisión de seguridad y las medidas de rendimiento |
 | [`docs/despliegue.md`](docs/despliegue.md) | Poner esto en un servidor: TLS, respaldos, actualizaciones y qué **no** resuelve |
-| [`docs/decisiones.md`](docs/decisiones.md) | Bitácora de las 46 decisiones técnicas y su porqué |
+| [`docs/decisiones.md`](docs/decisiones.md) | Bitácora de las 47 decisiones técnicas y su porqué |
 | [`database/modelo.md`](database/modelo.md) | Diagrama entidad-relación, relaciones e índices |
 
 ### Entregables
@@ -203,6 +204,9 @@ El detalle, con cómo se midió cada cosa, está en
 | 2 | Backend: API REST en Go | [`backend/README.md`](backend/README.md) ✅ |
 | 3 | Frontend: cliente en React | [`frontend/README.md`](frontend/README.md) ✅ |
 | 4 | Pruebas: colección de Postman | [`postman/README.md`](postman/README.md) ✅ |
+
+La colección del entregable 4 está además en formato [Bruno](bruno/README.md), generada desde la de
+Postman con `make bruno`.
 
 ## Avance por fases
 
